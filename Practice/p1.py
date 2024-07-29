@@ -3,76 +3,115 @@
 import random
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
+import numpy as np
 
 class Bird:
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.vx = random.uniform(-1, 1)
-        self.vy = random.uniform(-1, 1)
+        
+        self.pos = np.array([x, y])         # Position of the bird
+        self.dir = np.linalg.norm(np.array([random.uniform(-1, 1), random.uniform(-1, 1)]))  # Direction of the bird
+        self.speed = 0.5                     # Speed of the bird
 
-        self.cohesion = 0.1
-        self.separation = 0.5
-        self.alignment = 0.1
-        self.separation_distance = 10
+        self.cohesion_factor = 0.05
+        self.separation_factor = 0.05
+        self.alignment_factor = 0.05
+        self.sep_distance = 30
+        self.neighbourhood = 60
+        
 
 
 
     def update(self, birds):
         
-        align_vector, cohesion_vector, separation_vector = [[0,0], [0,0], [0,0]]
+        align_vector, cohesion_vector, separation_vector, avg_pos = np.zeros((4, 2))
 
-        avg_vx = 0
-        avg_vy = 0
         num_neighbours = 0
-        avg_xpos = 0
-        avg_ypos = 0
 
         for bird in birds:
-            if self.distance(bird) < 15 and bird != self:  # Calculates the average velocity of all birds within ... units of the current bird...
+            if self.distance(bird) <= self.neighbourhood and bird != self:  # Calculates the average velocity of all birds within ... units of the current bird
                 
                 num_neighbours += 1    
 
-                avg_vx += bird.vx
-                avg_vy += bird.vy
-                
-                avg_xpos += bird.x
-                avg_ypos += bird.y
-                
+                align_vector += bird.dir
+                avg_pos += bird.pos
+
+                separation_vector += (self.pos - bird.pos)/(self.distance(bird))**2
+
+
+                #if self.distance(bird) <= self.sep_distance and bird != self:
+                    #separation_vector += (self.pos - bird.pos)/(self.distance(bird))**2
+
+                #else:
+                    #separation_vector += (self.pos - bird.pos)/(self.distance(bird))**2
+
+           # elif self.distance(env) < 1:
+            #    self.pos[0]
 
 
         if num_neighbours > 0:        # i.e. the bird has neighbours
-            avg_vx /= num_neighbours
-            avg_vy /= num_neighbours
 
-            avg_xpos /= num_neighbours
-            avg_ypos /= num_neighbours
+            align_vector /= num_neighbours
+            avg_pos /= num_neighbours
+            separation_vector /= num_neighbours
+    
 
-        # Update the bird's velocity based on the average velocity of nearby birds
-        self.vx = (self.vx + avg_vx)/2  +  (avg_xpos - self.x)/2
-        self.vy = (self.vy + avg_vy)/2  +  (avg_ypos - self.y)/2
+        cohesion_vector = avg_pos - self.pos
+
+        # Update the bird's direction based on the average direction of nearby birds
+        self.dir += (align_vector * self.alignment_factor) + (cohesion_vector * self.cohesion_factor) + (separation_vector * self.separation_factor)
+        self.dir /= np.linalg.norm(self.dir)
+
+
 
         # Update the bird's position
-        self.x += self.vx
-        self.y += self.vy
+        #if (self.pos[0], self.pos[1]) >= (100, 100) or (self.pos[0], self.pos[1]) <= (0, 0):  #boundary conditions (if a bird reaches the boundary it will turn around)
+            #self.dir = -self.dir
+            #self.pos = self.dir * self.speed
 
-        if (self.x, self.y) == (0 or 100, 0 or 100):  #boundary conditions, if a bird reaches the boundary it will turn around
-            self.vx = -self.vx
-            self.vy = -self.vy
+        #if self.pos[0] <= env.left_limit or self.pos[0] >= env.right_limit or self.pos[1] <= env.bottom_limit or self.pos[1] >= env.top_limit:
+                #self.dir = -self.dir
+                #self.pos += self.dir * self.speed
 
+        
+        self.pos += self.dir * self.speed
+        #self.pos = np.clip(self.pos, 0, 100)  #boundary conditions (if a bird reaches the boundary it will turn around)
+        #self.pos %= 3
 
     def distance(self, other_bird):
-        return ((self.x - other_bird.x) ** 2 + (self.y - other_bird.y) ** 2) ** 0.5
+        return ((self.pos[0] - other_bird.pos[0]) ** 2 + (self.pos[1] - other_bird.pos[1]) ** 2) ** 0.5
+
+
+
+
+class Environment:
+    def __init__(self, width, height):
+
+        self.left_limit = 0
+        self.bottom_limit = 0
+        self.right_limit = width
+        self.top_limit = height 
+
+        #self.left_border = np.array([0, height])
+        #self.right_border = np.array([width, 0]) + np.array([0, height])
+        #self.top_border = np.array([])
+        #self.bottom_border =
+
+    
+    
+
+            
+
 
 
 
 #%%
+env = Environment(3,3)
 
 #Create a list of birds
 birds = []
-for _ in range(50):
-    x = random.uniform(10, 90)
-    y = random.uniform(10, 90)
+for _ in range(20):
+    x = random.uniform(5, 95)
+    y = random.uniform(5, 95)
     birds.append(Bird(x, y))
 
 
@@ -103,9 +142,9 @@ for _ in range(500):            #Update the scatter plot for each iteration
 #Animation using FuncAnimation method
 fig1 = plt.figure(figsize=(7, 7))
 ax1 = fig1.add_subplot(111)
-ax1.set_xlim(-500, 500)
-ax1.set_ylim(-500, 500)
-scatt = ax1.scatter([bird.x for bird in birds], [bird.y for bird in birds])
+ax1.set_xlim(-5, 105)
+ax1.set_ylim(-5, 105)
+scatt = ax1.scatter([bird.pos[0] for bird in birds], [bird.pos[1] for bird in birds])
 
 #Update function for the animation
 def update_frames(frame):
@@ -113,11 +152,15 @@ def update_frames(frame):
         bird.update(birds)
 
     # Update the scatter plot data
-    scatt.set_offsets([(bird.x, bird.y) for bird in birds])
+    scatt.set_offsets([(bird.pos[0], bird.pos[1]) for bird in birds])
     return scatt
 
 # Create the animation
-anim = animation.FuncAnimation(fig1, update_frames, frames=50, interval=10)
+anim = animation.FuncAnimation(fig1, update_frames, frames=500, interval=50)
+ax1.plot(np.zeros(100), np.linspace(0, 100, 100), color='black')
+ax1.plot(np.full(100,100), np.linspace(0, 100, 100), color='black')
+ax1.plot(np.linspace(0,100,100), np.zeros(100), color='black')
+ax1.plot(np.linspace(0, 100, 100),np.full(100, 100), color='black')
 
 plt.show(block=True)
 
@@ -125,4 +168,9 @@ from IPython.display import HTML
 HTML(anim.to_jshtml())
 
 
+# %%
+
+
+
+2%12
 # %%
