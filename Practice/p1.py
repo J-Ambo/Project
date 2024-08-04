@@ -10,13 +10,13 @@ class Bird:
         
         self.pos = np.array([x, y])         # Position of the bird
         self.dir = np.linalg.norm(np.array([random.uniform(-1, 1), random.uniform(-1, 1)]))  # Direction of the bird
-        self.speed = 0.5                     # Speed of the bird
+        self.speed = 1                     # Speed of the bird
 
         self.cohesion_factor = 0.05
         self.separation_factor = 0.05
         self.alignment_factor = 0.05
         self.sep_distance = 30
-        self.neighbourhood = 60
+        self.neighbourhood = 30
         
 
 
@@ -28,7 +28,9 @@ class Bird:
         num_neighbours = 0
 
         for bird in birds:
-            if self.distance(bird) <= self.neighbourhood and bird != self:  # Calculates the average velocity of all birds within ... units of the current bird
+
+        # Calculates the average velocity of all birds within ... units of the current bird
+            if self.distance(bird) <= self.neighbourhood and bird != self: 
                 
                 num_neighbours += 1    
 
@@ -68,10 +70,11 @@ class Bird:
             #self.dir = -self.dir
             #self.pos = self.dir * self.speed
 
-        #if self.pos[0] <= env.left_limit or self.pos[0] >= env.right_limit or self.pos[1] <= env.bottom_limit or self.pos[1] >= env.top_limit:
-                #self.dir = -self.dir
-                #self.pos += self.dir * self.speed
+        if self.pos[0] <= env.left_limit or self.pos[0] >= env.right_limit:
+            self.dir[0] = -self.dir[0]
 
+        if self.pos[1] <= env.bottom_limit or self.pos[1] >= env.top_limit:
+            self.dir[1] = -self.dir[1]
         
         self.pos += self.dir * self.speed
         #self.pos = np.clip(self.pos, 0, 100)  #boundary conditions (if a bird reaches the boundary it will turn around)
@@ -105,7 +108,7 @@ class Environment:
 
 
 #%%
-env = Environment(3,3)
+env = Environment(100,100)
 
 #Create a list of birds
 birds = []
@@ -115,26 +118,7 @@ for _ in range(20):
     birds.append(Bird(x, y))
 
 
-'''
-#Animation using plt.pause method
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_xlim(0, 100)
-ax.set_ylim(0, 100)
 
-
-scatter = ax.scatter([bird.x for bird in birds], [bird.y for bird in birds])
-
-
-for _ in range(500):            #Update the scatter plot for each iteration
-    for bird in birds:
-        bird.update(birds)
-    
-    scatter.set_offsets([(bird.x, bird.y) for bird in birds])
-
-    plt.pause(0.001)
-#plt.show()
-'''
 
 #%%
 
