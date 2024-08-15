@@ -13,9 +13,9 @@ class Bird:
         self.speed = 1                     # Speed of the bird
 
         self.cohesion_factor = 0.02
-        self.separation_factor = 0.01
+        self.separation_factor = 0.1
         self.alignment_factor = 0.01
-        #self.sep_distance = 30
+        self.wall_sep_distance = 2
         self.neighbourhood = 20
         
 
@@ -23,22 +23,28 @@ class Bird:
 
     def update(self, birds):
         
-        align_vector, cohesion_vector, separation_vector, avg_pos = np.zeros((4, 2))
+        align_vector, cohesion_vector, separation_vector, avg_pos, wall_separation_vector = np.zeros((5, 2))
 
         num_neighbours = 0
 
         for bird in birds:
 
-        # Calculates the average velocity of all birds within ... units of the current bird
-            if self.distance(bird) <= self.neighbourhood and bird != self: 
+            # Calculates the average velocity of all birds within ... units of the current bird
+            if self.distance_to_birds(bird) <= self.neighbourhood and bird != self: 
                 
                 num_neighbours += 1    
 
                 align_vector += bird.dir
                 avg_pos += bird.pos
 
-                separation_vector += (self.pos - bird.pos)/(self.distance(bird))
+                separation_vector += (self.pos - bird.pos)/(self.distance_to_birds(bird))
 
+
+            
+
+            if self.calculate_min_distance_to_wall(wall)[0] <= self.wall_sep_distance:
+
+                wall_separation_vector += (self.pos - self.calculate_min_distance_to_wall(wall)[1])/(self.calculate_min_distance_to_wall(wall)[0])**2
 
                 #if self.distance(bird) <= self.sep_distance and bird != self:
                     #separation_vector += (self.pos - bird.pos)/(self.distance(bird))**2
@@ -46,8 +52,7 @@ class Bird:
                 #else:
                     #separation_vector += (self.pos - bird.pos)/(self.distance(bird))**2
 
-           # elif self.distance(env) < 1:
-            #    self.pos[0]
+          
 
 
         if num_neighbours > 0:        # i.e. the bird has neighbours
@@ -62,16 +67,29 @@ class Bird:
         cohesion_vector = avg_pos - self.pos
 
         # Update the bird's direction based on the average direction of nearby birds
-        self.dir += (align_vector * self.alignment_factor) + (cohesion_vector * self.cohesion_factor) + (separation_vector * self.separation_factor)
+        self.dir += (align_vector * self.alignment_factor) + (cohesion_vector * self.cohesion_factor) + (separation_vector * self.separation_factor) + (wall_separation_vector)
         self.dir /= np.linalg.norm(self.dir)
         
         self.pos += self.dir * self.speed
         #self.pos = np.clip(self.pos, 0, 100)  #boundary conditions (if a bird reaches the boundary it will turn around)
         
 
-    def distance(self, other_bird):
-        return ((self.pos[0] - other_bird.pos[0]) ** 2 + (self.pos[1] - other_bird.pos[1]) ** 2) ** 0.5
+    def distance_to_birds(self, other_bird):
+        return ((self.pos[0] - other_bird.pos[0])**2 + (self.pos[1] - other_bird.pos[1])**2)**0.5
 
+
+
+    def calculate_min_distance_to_wall(self, wall):
+
+        min_distance = float('inf')
+        point_on_wall = np.zeros(2)
+        for wall_segment in wall:
+            for i in range(len(wall_segment) - 1):
+                distance = ((self.pos[0] - wall_segment[i][0])**2 + (self.pos[1]- wall_segment[i][1])**2)**0.5
+                if distance < min_distance:
+                    min_distance = distance
+                    point_on_wall = wall_segment[i]
+        return min_distance, point_on_wall
 
 
 
@@ -83,23 +101,6 @@ class Environment:
         self.right_limit = width
         self.top_limit = height 
 
-    def avoid_env(self, other_bird):
-        if other_bird.pos[0] <= self.left_limit or other_bird.pos[0] >= self.right_limit:
-            other_bird.dir[0] = -other_bird.dir[0]
-
-        elif other_bird.pos[1] <= self.bottom_limit or other_bird.pos[1] >= self.top_limit:
-            other_bird.dir[1] = -other_bird.dir[1]
-
-        else:
-            pass
-
-        other_bird.pos += other_bird.dir * other_bird.speed
-
-    
-    def obstacle(self, other_bird):
-        if other_bird.pos[0] >= 40 and other_bird.pos[0] <= 60 and other_bird.pos[1] >= 40 and other_bird.pos[1] <= 60:
-            other_bird.dir = -other_bird.dir
-            other_bird.pos += other_bird.dir * other_bird.speed
 
 
 
@@ -108,9 +109,19 @@ class Environment:
 #%%
 env = Environment(100,100)
 
+nwall = 100
+wall = np.empty((4,nwall,2), dtype=float)
+left_border = np.asarray(list(zip(np.zeros(nwall), np.linspace(0, 100, nwall))))
+right_border = np.asarray(list(zip(np.full(nwall, 100), np.linspace(0, 100, nwall))))
+top_border = np.asarray(list(zip(np.linspace(0, 100, nwall), np.full(nwall, 100))))
+bottom_border = np.asarray(list(zip(np.linspace(0, 100, nwall), np.zeros(nwall))))
+
+wall[0], wall[1], wall[2], wall[3] = left_border, right_border, top_border, bottom_border
+
+
 #Create a list of birds
 birds = []
-for _ in range(100):
+for _ in range(10):
     x = random.uniform(5, 95)
     y = random.uniform(5, 95)
     birds.append(Bird(x, y))
@@ -132,8 +143,6 @@ scatt = ax1.scatter([bird.pos[0] for bird in birds], [bird.pos[1] for bird in bi
 def update_frames(frame):
     for bird in birds:
         bird.update(birds)
-        env.avoid_env(bird)
-        #env.obstacle(bird)
 
     # Update the scatter plot data
     scatt.set_offsets([(bird.pos[0], bird.pos[1]) for bird in birds])
@@ -153,9 +162,5 @@ from IPython.display import HTML
 HTML(anim.to_jshtml())
 
 
-# %%
 
-
-
-2%12
 # %%
