@@ -19,65 +19,58 @@ class Bird:
         self.neighbourhood = 20
         
 
-
-
-    def update(self, birds):
-        
-        align_vector, cohesion_vector, separation_vector, avg_pos, wall_separation_vector = np.zeros((5, 2))
-
+    def align_vector(self, birds):
+        align_vector = np.zeros(2)
         num_neighbours = 0
 
         for bird in birds:
-
-            # Calculates the average velocity of all birds within ... units of the current bird
             if self.distance_to_birds(bird) <= self.neighbourhood and bird != self: 
-                
-                num_neighbours += 1    
-
                 align_vector += bird.dir
-                avg_pos += bird.pos
+                num_neighbours += 1
 
-                separation_vector += (self.pos - bird.pos)/(self.distance_to_birds(bird))
-
-
-            
-
-            if self.calculate_min_distance_to_wall(wall)[0] <= self.wall_sep_distance:
-
-                wall_separation_vector += (self.pos - self.calculate_min_distance_to_wall(wall)[1])/(self.calculate_min_distance_to_wall(wall)[0])**2
-
-                #if self.distance(bird) <= self.sep_distance and bird != self:
-                    #separation_vector += (self.pos - bird.pos)/(self.distance(bird))**2
-
-                #else:
-                    #separation_vector += (self.pos - bird.pos)/(self.distance(bird))**2
-
-          
-
-
-        if num_neighbours > 0:        # i.e. the bird has neighbours
-
+        if num_neighbours > 0:
             align_vector /= num_neighbours
+
+        return align_vector
+
+    def cohesion_vector(self, birds):
+        cohesion_vector, avg_pos = np.zeros((2,2))
+        num_neighbours = 0
+
+        for bird in birds:
+            if self.distance_to_birds(bird) <= self.neighbourhood and bird != self: 
+                avg_pos += bird.pos
+                num_neighbours += 1
+
+        if num_neighbours > 0:
             avg_pos /= num_neighbours
+            cohesion_vector = avg_pos - self.pos
+
+        return cohesion_vector
+
+    def separation_vector(self, birds):
+        separation_vector = np.zeros(2)
+        num_neighbours = 0
+
+        for bird in birds:
+            if self.distance_to_birds(bird) <= self.neighbourhood and bird != self: 
+                separation_vector += (self.pos - bird.pos)/(self.distance_to_birds(bird))
+                num_neighbours += 1
+
+        if num_neighbours > 0:
             separation_vector /= num_neighbours
 
-        else:
-            pass
+        return separation_vector
+    
+    def wall_separation_vector(self, wall):
+        wall_separation_vector = np.zeros(2)
+        if self.calculate_min_distance_to_wall(wall)[0] <= self.wall_sep_distance:
+            wall_separation_vector = (self.pos - self.calculate_min_distance_to_wall(wall)[1])/(self.calculate_min_distance_to_wall(wall)[0])**2
 
-        cohesion_vector = avg_pos - self.pos
-
-        # Update the bird's direction based on the average direction of nearby birds
-        self.dir += (align_vector * self.alignment_factor) + (cohesion_vector * self.cohesion_factor) + (separation_vector * self.separation_factor) + (wall_separation_vector)
-        self.dir /= np.linalg.norm(self.dir)
-        
-        self.pos += self.dir * self.speed
-        #self.pos = np.clip(self.pos, 0, 100)  #boundary conditions (if a bird reaches the boundary it will turn around)
-        
+        return wall_separation_vector
 
     def distance_to_birds(self, other_bird):
         return ((self.pos[0] - other_bird.pos[0])**2 + (self.pos[1] - other_bird.pos[1])**2)**0.5
-
-
 
     def calculate_min_distance_to_wall(self, wall):
 
@@ -91,15 +84,23 @@ class Bird:
                     point_on_wall = wall_segment[i]
         return min_distance, point_on_wall
 
+    def update(self, birds):
+
+        # Update the bird's direction based on the average direction of nearby birds
+        self.dir += (self.align_vector * self.alignment_factor) + (self.cohesion_vector * self.cohesion_factor) + (self.separation_vector * self.separation_factor) + (self.wall_separation_vector)
+        self.dir /= np.linalg.norm(self.dir)
+        
+        self.pos += self.dir * self.speed
+        
 
 
 class Environment:
-    def __init__(self, width, height):
+    def __init__(self, size):
 
         self.left_limit = 0
         self.bottom_limit = 0
-        self.right_limit = width
-        self.top_limit = height 
+        self.right_limit = size
+        self.top_limit = size 
 
 
 
@@ -107,7 +108,7 @@ class Environment:
 
 
 #%%
-env = Environment(100,100)
+env = Environment(100)
 
 nwall = 100
 wall = np.empty((4,nwall,2), dtype=float)
@@ -121,7 +122,7 @@ wall[0], wall[1], wall[2], wall[3] = left_border, right_border, top_border, bott
 
 #Create a list of birds
 birds = []
-for _ in range(10):
+for _ in range(20):
     x = random.uniform(5, 95)
     y = random.uniform(5, 95)
     birds.append(Bird(x, y))
