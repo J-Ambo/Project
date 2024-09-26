@@ -63,8 +63,8 @@ class Bird:
     
     def calculate_wall_separation_vector(self, wall):
         wall_separation_vector = np.zeros(2)
-        if self.calculate_min_distance_to_wall(wall)[0] <= self.wall_sep_distance:
-            wall_separation_vector = (self.pos - self.calculate_min_distance_to_wall(wall)[1])/(self.calculate_min_distance_to_wall(wall)[0])**2
+        if self.calculate_min_distance_to_wall(env.create_walls)[0] <= self.wall_sep_distance:
+            wall_separation_vector = (self.pos - self.calculate_min_distance_to_wall(env.create_walls)[1])/(self.calculate_min_distance_to_wall(env.create_walls)[0])**2
 
         return wall_separation_vector
 
@@ -74,8 +74,8 @@ class Bird:
     def calculate_min_distance_to_wall(self, wall):
         min_distance = float('inf')
         point_on_wall = np.zeros(2)
-        for wall_segment in wall:
-            for i in range(len(wall_segment)):
+        for wall_segment in env.create_walls():
+            for i in range(env.nwall):
                 distance = ((self.pos[0] - wall_segment[i][0])**2 + (self.pos[1]- wall_segment[i][1])**2)**0.5
                 if distance < min_distance:
                     min_distance = distance
@@ -94,35 +94,36 @@ class Bird:
 class Environment:
 
     def __init__(self, size):
+        self.size = size
         self.left_limit = 0
         self.bottom_limit = 0
         self.right_limit = size
         self.top_limit = size 
+        self.nwall = int(size*1.01)  #number of points on the wall
 
+    def create_walls(self): 
+        wall = np.empty((4,self.nwall,2), dtype=float)
+        left_border = np.asarray(list(zip(np.zeros(self.nwall), np.linspace(0, self.size, self.nwall))))
+        right_border = np.asarray(list(zip(np.full(self.nwall, self.size), np.linspace(0, self.size, self.nwall))))
+        top_border = np.asarray(list(zip(np.linspace(0, self.size, self.nwall), np.full(self.nwall, self.size))))
+        bottom_border = np.asarray(list(zip(np.linspace(0, self.size, self.nwall), np.zeros(self.nwall))))
 
+        wall[0], wall[1], wall[2], wall[3] = left_border, right_border, top_border, bottom_border
+
+        return wall
 
 
 
 
 #%%
-env = Environment(100)
-
-nwall = 100
-wall = np.empty((4,nwall,2), dtype=float)
-left_border = np.asarray(list(zip(np.zeros(nwall), np.linspace(0, 100, nwall))))
-right_border = np.asarray(list(zip(np.full(nwall, 100), np.linspace(0, 100, nwall))))
-top_border = np.asarray(list(zip(np.linspace(0, 100, nwall), np.full(nwall, 100))))
-bottom_border = np.asarray(list(zip(np.linspace(0, 100, nwall), np.zeros(nwall))))
-
-wall[0], wall[1], wall[2], wall[3] = left_border, right_border, top_border, bottom_border
-
+env = Environment(60)
 
 #Create a list of birds
-birds = []
-for _ in range(20):
-    x = random.uniform(5, 95)
-    y = random.uniform(5, 95)
-    birds.append(Bird(x, y))
+all_birds = []
+for _ in range(50):
+    x = random.uniform(env.size*0.05, env.size*0.95)
+    y = random.uniform(env.size*0.05, env.size*0.95)
+    all_birds.append(Bird(x, y))
 
 
 
@@ -133,31 +134,32 @@ for _ in range(20):
 #Animation using FuncAnimation method
 fig1 = plt.figure(figsize=(7, 7))
 ax1 = fig1.add_subplot(111)
-ax1.set_xlim(-5, 105)
-ax1.set_ylim(-5, 105)
-scatt = ax1.scatter([bird.pos[0] for bird in birds], [bird.pos[1] for bird in birds])
+ax1.set_xlim(-env.size*0.05, env.size*1.05)
+ax1.set_ylim(-env.size*0.05, env.size*1.05)
+scatt = ax1.scatter([bird.pos[0] for bird in all_birds], [bird.pos[1] for bird in all_birds])
 
 #Update function for the animation
 def update_frames(frame):
-    for bird in birds:
-        bird.update(birds)
+    for bird in all_birds:
+        bird.update(all_birds)
 
     # Update the scatter plot data
-    scatt.set_offsets([(bird.pos[0], bird.pos[1]) for bird in birds])
+    scatt.set_offsets([(bird.pos[0], bird.pos[1]) for bird in all_birds])
     return scatt
 
 # Create the animation
 anim = animation.FuncAnimation(fig1, update_frames, frames=500, interval=50, repeat=True)
 
-ax1.plot(np.zeros(100), np.linspace(0, 100, 100), color='black')
-ax1.plot(np.full(100,100), np.linspace(0, 100, 100), color='black')
-ax1.plot(np.linspace(0,100,100), np.zeros(100), color='black')
-ax1.plot(np.linspace(0, 100, 100),np.full(100, 100), color='black')
+ax1.plot(np.zeros(100), np.linspace(0, env.size, 100), color='black')
+ax1.plot(np.full(100,env.size), np.linspace(0, env.size, 100), color='black')
+ax1.plot(np.linspace(0,env.size,100), np.zeros(100), color='black')
+ax1.plot(np.linspace(0, env.size, 100),np.full(100, env.size), color='black')
 
 plt.show(block=True)
 
 from IPython.display import HTML
 HTML(anim.to_jshtml())
+
 
 
 
