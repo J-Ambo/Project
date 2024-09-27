@@ -16,7 +16,7 @@ class Bird:
         self.separation_factor = 0.1
         self.alignment_factor = 0.01
         self.wall_sep_distance = 2
-        self.neighbourhood = 20
+        self.neighbourhood = 10
 
     def calculate_align_vector(self, birds):
         align_vector = np.zeros(2)
@@ -64,7 +64,7 @@ class Bird:
     def calculate_wall_separation_vector(self, wall):
         wall_separation_vector = np.zeros(2)
         if self.calculate_min_distance_to_wall(env.create_walls)[0] <= self.wall_sep_distance:
-            wall_separation_vector = (self.pos - self.calculate_min_distance_to_wall(env.create_walls)[1])/(self.calculate_min_distance_to_wall(env.create_walls)[0])**2
+            wall_separation_vector = (self.pos - self.calculate_min_distance_to_wall(env.create_walls)[1])/(self.calculate_min_distance_to_wall(env.create_walls)[0])**0.5
 
         return wall_separation_vector
 
@@ -83,15 +83,30 @@ class Bird:
 
         return min_distance, point_on_wall
 
-    def update(self, birds):
-        # Update the bird's direction based on the average direction of nearby birds
-        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_wall_separation_vector(env.create_walls()))
-        self.dir /= np.linalg.norm(self.dir)   
-        self.pos += self.dir * self.speed
-        
+
 class Prey(Bird):
     def __init__(self, x, y):
         super().__init__(x, y)
+
+    def calculate_predator_separation_vector(self, birds):
+        predator_separation_vector = np.zeros(2)
+        num_neighbours = 0
+
+        for bird in birds:
+            if isinstance(bird, Predator) and self.calculate_distance_to_birds(bird) <= self.neighbourhood:
+                predator_separation_vector += (self.pos - bird.pos)/(self.calculate_distance_to_birds(bird))
+                num_neighbours += 1
+        
+        if num_neighbours > 0:
+            predator_separation_vector /= num_neighbours
+
+        return predator_separation_vector
+    
+    def update_prey(self, birds):
+        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_wall_separation_vector(env.create_walls())) + (self.calculate_predator_separation_vector(birds))
+        self.dir /= np.linalg.norm(self.dir)   
+        self.pos += self.dir * self.speed
+
 
 class Predator(Bird):
     def __init__(self, x, y):
@@ -112,16 +127,20 @@ class Predator(Bird):
 
         return separation_vector
     
+    def update_predator(self, birds):
+        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_wall_separation_vector(env.create_walls()))
+        self.dir /= np.linalg.norm(self.dir)   
+        self.pos += self.dir * self.speed
+        
 
 class Environment:
-
     def __init__(self, size):
         self.size = size
         self.left_limit = 0
         self.bottom_limit = 0
         self.right_limit = size
         self.top_limit = size 
-        self.nwall = int(size*1.01)  #number of points on the wall
+        self.nwall = int(size*1.05)  #number of points on the wall
 
     def create_walls(self): 
         wall = np.empty((4,self.nwall,2), dtype=float)
@@ -168,8 +187,10 @@ scatt = ax1.scatter([bird.pos[0] for bird in all_birds], [bird.pos[1] for bird i
 
 #Update function for the animation
 def update_frames(frame):
-    for bird in all_birds:
-        bird.update(all_birds)
+    for prey in all_prey:
+        prey.update_prey(all_birds)
+    for predator in all_predators:
+        predator.update_predator(all_birds)
 
     # Update the scatter plot data
     scatt.set_offsets([(bird.pos[0], bird.pos[1]) for bird in all_birds])
