@@ -85,11 +85,33 @@ class Bird:
 
     def update(self, birds):
         # Update the bird's direction based on the average direction of nearby birds
-        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_wall_separation_vector(birds))
+        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_wall_separation_vector(env.create_walls()))
         self.dir /= np.linalg.norm(self.dir)   
         self.pos += self.dir * self.speed
         
+class Prey(Bird):
+    def __init__(self, x, y):
+        super().__init__(x, y)
 
+class Predator(Bird):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.speed = 0.5*self.speed
+
+    def calculate_separation_vector(self, birds):  #Instead of steerng away the predator steers towards prey
+        separation_vector = np.zeros(2)
+        num_neighbours = 0
+
+        for bird in birds:
+            if self.calculate_distance_to_birds(bird) <= self.neighbourhood and bird != self: 
+                separation_vector += (-self.pos + bird.pos)/(self.calculate_distance_to_birds(bird))
+                num_neighbours += 1
+
+        if num_neighbours > 0:
+            separation_vector /= num_neighbours
+
+        return separation_vector
+    
 
 class Environment:
 
@@ -119,13 +141,19 @@ class Environment:
 env = Environment(60)
 
 #Create a list of birds
-all_birds = []
+all_predators = []
+for _ in range(1):
+    x = random.uniform(env.size*0.05, env.size*0.95)
+    y = random.uniform(env.size*0.05, env.size*0.95)
+    all_predators.append(Predator(x, y))
+
+all_prey = []
 for _ in range(50):
     x = random.uniform(env.size*0.05, env.size*0.95)
     y = random.uniform(env.size*0.05, env.size*0.95)
-    all_birds.append(Bird(x, y))
+    all_prey.append(Prey(x, y))
 
-
+all_birds = all_prey + all_predators
 
 
 #%%
@@ -136,7 +164,7 @@ fig1 = plt.figure(figsize=(7, 7))
 ax1 = fig1.add_subplot(111)
 ax1.set_xlim(-env.size*0.05, env.size*1.05)
 ax1.set_ylim(-env.size*0.05, env.size*1.05)
-scatt = ax1.scatter([bird.pos[0] for bird in all_birds], [bird.pos[1] for bird in all_birds])
+scatt = ax1.scatter([bird.pos[0] for bird in all_birds], [bird.pos[1] for bird in all_birds], c=['blue' if isinstance(bird, Prey) else 'red' for bird in all_birds], s=10)
 
 #Update function for the animation
 def update_frames(frame):
