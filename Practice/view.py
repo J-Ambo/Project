@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 import random
-from p1 import Bird
+from Practice.BoidsModel import Bird
 
 birds = []
 for _ in range(20):
