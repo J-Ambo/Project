@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class Bird:
-
     def __init__(self, x, y): 
         self.pos = np.array([x, y])         # Position of the bird
         self.dir = np.linalg.norm(np.array([random.uniform(-1, 1), random.uniform(-1, 1)]))  # Direction of the bird
@@ -60,17 +59,18 @@ class Bird:
             separation_vector /= num_neighbours
 
         return separation_vector
-    
+    '''
     def calculate_wall_separation_vector(self, wall):
         wall_separation_vector = np.zeros(2)
         if self.calculate_min_distance_to_wall(env.create_walls)[0] <= self.wall_sep_distance:
             wall_separation_vector = (self.pos - self.calculate_min_distance_to_wall(env.create_walls)[1])/(self.calculate_min_distance_to_wall(env.create_walls)[0])**0.5
 
         return wall_separation_vector
-
+    '''
     def calculate_distance_to_birds(self, other_bird):
         return ((self.pos[0] - other_bird.pos[0])**2 + (self.pos[1] - other_bird.pos[1])**2)**0.5
 
+    '''
     def calculate_min_distance_to_wall(self, wall):
         min_distance = float('inf')
         point_on_wall = np.zeros(2)
@@ -82,6 +82,23 @@ class Bird:
                     point_on_wall = wall_segment[i]
 
         return min_distance, point_on_wall
+    '''
+
+def point_is_out_of_bounds(coord, size):
+    if coord >= size:
+        return True
+    elif coord <= 0:
+        return True
+    else:
+        return False
+
+def apply_boudary_condition(coord, size):
+    if coord >= size:
+        return size - 0.01*size
+    elif coord <= 0:
+        return 0 + 0.01*size
+        
+    
 
 
 class Prey(Bird):
@@ -103,7 +120,7 @@ class Prey(Bird):
         return predator_separation_vector
     
     def update_prey(self, birds):
-        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_wall_separation_vector(env.create_walls())) + (self.calculate_predator_separation_vector(birds))
+        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_predator_separation_vector(birds)) # (self.calculate_wall_separation_vector(env.create_walls()))
         self.dir /= np.linalg.norm(self.dir)   
         self.pos += self.dir * self.speed
 
@@ -128,9 +145,20 @@ class Predator(Bird):
         return separation_vector
     
     def update_predator(self, birds):
-        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_wall_separation_vector(env.create_walls()))
-        self.dir /= np.linalg.norm(self.dir)   
-        self.pos += self.dir * self.speed
+        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) #(self.calculate_wall_separation_vector(env.create_walls()))
+        self.dir /= np.linalg.norm(self.dir) 
+
+        if point_is_out_of_bounds(self.pos[0], env.size):
+            apply_boudary_condition(self.pos[0], env.size)
+        
+        else:
+            self.pos += self.dir * self.speed
+
+        if point_is_out_of_bounds(self.pos[1], env.size):
+            apply_boudary_condition(self.pos[1], env.size)
+
+        else:
+            self.pos += self.dir * self.speed
         
 
 class Environment:
@@ -142,6 +170,7 @@ class Environment:
         self.top_limit = size 
         self.nwall = int(size*1.1)  #number of points on the wall
 
+'''
     def create_walls(self): 
         wall = np.empty((4,self.nwall,2), dtype=float)
         left_border = np.asarray(list(zip(np.zeros(self.nwall), np.linspace(0, self.size, self.nwall))))
@@ -152,7 +181,7 @@ class Environment:
         wall[0], wall[1], wall[2], wall[3] = left_border, right_border, top_border, bottom_border
 
         return wall
-
+'''
 
 
 
