@@ -94,9 +94,11 @@ def point_is_out_of_bounds(coord, size):
 
 def apply_boudary_condition(coord, size):
     if coord >= size:
-        return size - 0.01*size
+        coord = size - 0.01*size
+        return coord
     elif coord <= 0:
-        return 0 + 0.01*size
+        coord = 0 + 0.01*size
+        return coord
         
     
 
@@ -122,13 +124,24 @@ class Prey(Bird):
     def update_prey(self, birds):
         self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_predator_separation_vector(birds)) # (self.calculate_wall_separation_vector(env.create_walls()))
         self.dir /= np.linalg.norm(self.dir)   
-        self.pos += self.dir * self.speed
+        
+        if point_is_out_of_bounds(self.pos[0], env.size):
+            self.pos[0] = apply_boudary_condition(self.pos[0], env.size)
+            self.dir[0] *= -1
+        else:
+            self.pos[0] += self.dir[0] * self.speed
+
+        if point_is_out_of_bounds(self.pos[1], env.size):
+            self.pos[1] = apply_boudary_condition(self.pos[1], env.size)
+            self.dir[1] *= -1
+        else:
+            self.pos[1] += self.dir[1] * self.speed
 
 
 class Predator(Bird):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.speed = 0.5*self.speed
+        self.speed = 1.5*self.speed
 
     def calculate_separation_vector(self, birds):  #Instead of steerng away the predator steers towards prey
         separation_vector = np.zeros(2)
@@ -149,16 +162,16 @@ class Predator(Bird):
         self.dir /= np.linalg.norm(self.dir) 
 
         if point_is_out_of_bounds(self.pos[0], env.size):
-            apply_boudary_condition(self.pos[0], env.size)
-        
+            self.pos[0] = apply_boudary_condition(self.pos[0], env.size)
+            self.dir[0] *= -1
         else:
-            self.pos += self.dir * self.speed
+            self.pos[0] += self.dir[0] * self.speed
 
         if point_is_out_of_bounds(self.pos[1], env.size):
-            apply_boudary_condition(self.pos[1], env.size)
-
+            self.pos[1] = apply_boudary_condition(self.pos[1], env.size)
+            self.dir[1] *= -1
         else:
-            self.pos += self.dir * self.speed
+            self.pos[1] += self.dir[1] * self.speed
         
 
 class Environment:
