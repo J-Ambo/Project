@@ -59,30 +59,10 @@ class Bird:
             separation_vector /= num_neighbours
 
         return separation_vector
-    '''
-    def calculate_wall_separation_vector(self, wall):
-        wall_separation_vector = np.zeros(2)
-        if self.calculate_min_distance_to_wall(env.create_walls)[0] <= self.wall_sep_distance:
-            wall_separation_vector = (self.pos - self.calculate_min_distance_to_wall(env.create_walls)[1])/(self.calculate_min_distance_to_wall(env.create_walls)[0])**0.5
-
-        return wall_separation_vector
-    '''
+    
     def calculate_distance_to_birds(self, other_bird):
         return ((self.pos[0] - other_bird.pos[0])**2 + (self.pos[1] - other_bird.pos[1])**2)**0.5
 
-    '''
-    def calculate_min_distance_to_wall(self, wall):
-        min_distance = float('inf')
-        point_on_wall = np.zeros(2)
-        for wall_segment in env.create_walls():
-            for i in range(env.nwall):
-                distance = ((self.pos[0] - wall_segment[i][0])**2 + (self.pos[1]- wall_segment[i][1])**2)**0.5
-                if distance < min_distance:
-                    min_distance = distance
-                    point_on_wall = wall_segment[i]
-
-        return min_distance, point_on_wall
-    '''
 
 def point_is_out_of_bounds(coord, size):
     if coord >= size:
@@ -181,20 +161,6 @@ class Environment:
         self.bottom_limit = 0
         self.right_limit = size
         self.top_limit = size 
-        self.nwall = int(size*1.1)  #number of points on the wall
-
-'''
-    def create_walls(self): 
-        wall = np.empty((4,self.nwall,2), dtype=float)
-        left_border = np.asarray(list(zip(np.zeros(self.nwall), np.linspace(0, self.size, self.nwall))))
-        right_border = np.asarray(list(zip(np.full(self.nwall, self.size), np.linspace(0, self.size, self.nwall))))
-        top_border = np.asarray(list(zip(np.linspace(0, self.size, self.nwall), np.full(self.nwall, self.size))))
-        bottom_border = np.asarray(list(zip(np.linspace(0, self.size, self.nwall), np.zeros(self.nwall))))
-
-        wall[0], wall[1], wall[2], wall[3] = left_border, right_border, top_border, bottom_border
-
-        return wall
-'''
 
 
 
