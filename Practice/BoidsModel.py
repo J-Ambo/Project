@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class Bird:
-
     def __init__(self, x, y): 
         self.pos = np.array([x, y])         # Position of the bird
         self.dir = np.linalg.norm(np.array([random.uniform(-1, 1), random.uniform(-1, 1)]))  # Direction of the bird
@@ -61,13 +60,6 @@ class Bird:
 
         return separation_vector
     
-    def calculate_wall_separation_vector(self, wall):
-        wall_separation_vector = np.zeros(2)
-        if self.calculate_min_distance_to_wall(env.create_walls)[0] <= self.wall_sep_distance:
-            wall_separation_vector = (self.pos - self.calculate_min_distance_to_wall(env.create_walls)[1])/(self.calculate_min_distance_to_wall(env.create_walls)[0])**0.5
-
-        return wall_separation_vector
-
     def calculate_distance_to_birds(self, other_bird):
         return ((self.pos[0] - other_bird.pos[0])**2 + (self.pos[1] - other_bird.pos[1])**2)**0.5
 
@@ -109,9 +101,20 @@ class Prey(Bird):
         return predator_separation_vector
     
     def update_prey(self, birds):
-        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_wall_separation_vector(env.create_walls())) + (self.calculate_predator_separation_vector(birds))
+        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_predator_separation_vector(birds)) # (self.calculate_wall_separation_vector(env.create_walls()))
         self.dir /= np.linalg.norm(self.dir)   
-        self.pos += self.dir * self.speed
+        
+        if point_is_out_of_bounds(self.pos[0], env.size):
+            self.pos[0] = apply_boudary_condition(self.pos[0], env.size)
+            self.dir[0] *= -1
+        else:
+            self.pos[0] += self.dir[0] * self.speed
+
+        if point_is_out_of_bounds(self.pos[1], env.size):
+            self.pos[1] = apply_boudary_condition(self.pos[1], env.size)
+            self.dir[1] *= -1
+        else:
+            self.pos[1] += self.dir[1] * self.speed
 
 
 class Predator(Bird):
@@ -134,9 +137,20 @@ class Predator(Bird):
         return separation_vector
     
     def update_predator(self, birds):
-        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) + (self.calculate_wall_separation_vector(env.create_walls()))
-        self.dir /= np.linalg.norm(self.dir)   
-        self.pos += self.dir * self.speed
+        self.dir += (self.alignment_factor * self.calculate_align_vector(birds)) + (self.cohesion_factor * self.calculate_cohesion_vector(birds)) + (self.separation_factor * self.calculate_separation_vector(birds)) #(self.calculate_wall_separation_vector(env.create_walls()))
+        self.dir /= np.linalg.norm(self.dir) 
+
+        if point_is_out_of_bounds(self.pos[0], env.size):
+            self.pos[0] = apply_boudary_condition(self.pos[0], env.size)
+            self.dir[0] *= -1
+        else:
+            self.pos[0] += self.dir[0] * self.speed
+
+        if point_is_out_of_bounds(self.pos[1], env.size):
+            self.pos[1] = apply_boudary_condition(self.pos[1], env.size)
+            self.dir[1] *= -1
+        else:
+            self.pos[1] += self.dir[1] * self.speed
         
 
 class Environment:
@@ -146,19 +160,6 @@ class Environment:
         self.bottom_limit = 0
         self.right_limit = size
         self.top_limit = size 
-        self.nwall = int(size*1.1)  #number of points on the wall
-
-    def create_walls(self): 
-        wall = np.empty((4,self.nwall,2), dtype=float)
-        left_border = np.asarray(list(zip(np.zeros(self.nwall), np.linspace(0, self.size, self.nwall))))
-        right_border = np.asarray(list(zip(np.full(self.nwall, self.size), np.linspace(0, self.size, self.nwall))))
-        top_border = np.asarray(list(zip(np.linspace(0, self.size, self.nwall), np.full(self.nwall, self.size))))
-        bottom_border = np.asarray(list(zip(np.linspace(0, self.size, self.nwall), np.zeros(self.nwall))))
-
-        wall[0], wall[1], wall[2], wall[3] = left_border, right_border, top_border, bottom_border
-
-        return wall
-
 
 
 
