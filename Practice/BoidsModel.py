@@ -71,17 +71,23 @@ class Bird:
     def calculate_distance_to_birds(self, other_bird):
         return ((self.pos[0] - other_bird.pos[0])**2 + (self.pos[1] - other_bird.pos[1])**2)**0.5
 
-    def calculate_min_distance_to_wall(self, wall):
-        min_distance = float('inf')
-        point_on_wall = np.zeros(2)
-        for wall_segment in env.create_walls():
-            for i in range(env.nwall):
-                distance = ((self.pos[0] - wall_segment[i][0])**2 + (self.pos[1]- wall_segment[i][1])**2)**0.5
-                if distance < min_distance:
-                    min_distance = distance
-                    point_on_wall = wall_segment[i]
 
-        return min_distance, point_on_wall
+def point_is_out_of_bounds(coord, size):
+    if coord >= size:
+        return True
+    elif coord <= 0:
+        return True
+    else:
+        return False
+
+def apply_boudary_condition(coord, size):
+    if coord >= size:
+        coord = size - 0.01*size
+        return coord
+    elif coord <= 0:
+        coord = 0 + 0.01*size
+        return coord
+        
 
 
 class Prey(Bird):
@@ -111,7 +117,7 @@ class Prey(Bird):
 class Predator(Bird):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.speed = 0.5*self.speed
+        self.speed = 0.9*self.speed
 
     def calculate_separation_vector(self, birds):  #Instead of steerng away the predator steers towards prey
         separation_vector = np.zeros(2)
@@ -167,7 +173,7 @@ for _ in range(1):
     all_predators.append(Predator(x, y))
 
 all_prey = []
-for _ in range(50):
+for _ in range(100):
     x = random.uniform(env.size*0.05, env.size*0.95)
     y = random.uniform(env.size*0.05, env.size*0.95)
     all_prey.append(Prey(x, y))
