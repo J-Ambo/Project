@@ -8,6 +8,7 @@ class Model:
         self.size = size
         self.humans = []
         self.env = Environment(size)
+        self.create_humans()
 
     def create_humans(self):
         '''Function to create humans with random opinions and scepticism'''
@@ -20,10 +21,10 @@ class Model:
             human = Human(x, y, op, sc)
             self.humans.append(human)
 
-    def update_frame(self):
+    def update_timestep(self):
         '''Function to update the model each timestep'''
         for human in self.humans:
-            human.move(human.pos[0], human.pos[1], self.env)
+            human.move(human.pos[0], human.pos[1], self.env.size)
 
         random_index = random.randint(0, self.population)
         random_human = self.humans[random_index - 1]
@@ -48,8 +49,3 @@ class Model:
 
 
 
-sum_of_opinions = sum([human.opinion for human in Model.humans])
-average_opinion = sum_of_opinions / Model.population
-
-list_of_aveage_opinions = []
-list_of_aveage_opinions.append(average_opinion)
