@@ -1,54 +1,55 @@
-import numpy as np
 import random
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-#import sys
-#sys.path.append('C:/Users/44771/Documents/Level4Project/Polerisation_ABM/model.py')
-from model_entities import Environment, Human
+from Human_agent import Human
+from Environment_agent import Environment
 
-#random.seed(123567)
-population = 150
-Human.opinion_threshold = 0.5
+class Model:
+    def __init__(self, population, size):
+        self.population = population
+        self.size = size
+        self.humans = []
+        self.env = Environment(size)
 
-env = Environment(100)
-env.create_environment()
+    def create_humans(self):
+        '''Function to create humans with random opinions and scepticism'''
+        for i in range(self.population):
+            x = random.randint(0, self.env.size)
+            y = random.randint(0, self.env.size)
+            op = random.uniform(-1, 1)
+            sc = random.uniform(0, 1)
 
-humans = []
-for i in range(population):
-    x = random.randint(0,env.size)
-    y = random.randint(0,env.size)
-    op = random.uniform(-1,1)   #random.choice([-1,1])
-    sc = random.uniform(0,1) 
+            human = Human(x, y, op, sc)
+            self.humans.append(human)
 
-    human = Human(x, y, op, sc)
-    humans.append(human)
+    def update_frame(self):
+        '''Function to update the model each timestep'''
+        for human in self.humans:
+            human.move(human.pos[0], human.pos[1], self.env)
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_axis_off()
-ax.set_xlim(0, env.size)
-ax.set_ylim(0, env.size)
+        random_index = random.randint(0, self.population)
+        random_human = self.humans[random_index - 1]
+        random_human.interact(random.choice(self.humans))
 
-scatter = ax.scatter([human.pos[0] for human in humans], [human.pos[1] for human in humans], c=[human.opinion for human in humans], cmap='bwr',s=[10*np.exp(human.scepticism*2) for human in humans])
+    def log_data(self):
+        '''Function to log data for each human'''
+        opinion_data = []
+        for human in self.humans:
+            opinion_data.append(human.opinion)
+        return opinion_data
 
-def update_frame(frame):
-    for human in humans:
-        human.move(human.pos[0], human.pos[1], env)
+    def run_model(self, frames):
+        for frame in range(frames):
+            self.update_frame()
+
+        return self.log_data()
     
-    random_index = random.randint(0,population)
-    random_human = humans[random_index - 1]
-    random_human.interact(random.choice(humans))
 
-    scatter.set_offsets([(human.pos[0], human.pos[1]) for human in humans])
 
-    random_index = random.randint(0,population)
-    random_human = humans[random_index]
-    random_human.interact(random.choice(humans))
-    scatter.set_array([human.opinion for human in humans])
 
-    return scatter
-ani = animation.FuncAnimation(fig, update_frame, frames=100, interval=100, repeat=True)
-plt.show(block=True)
 
-from IPython.display import HTML
-HTML(ani.to_jshtml())
+
+
+sum_of_opinions = sum([human.opinion for human in Model.humans])
+average_opinion = sum_of_opinions / Model.population
+
+list_of_aveage_opinions = []
+list_of_aveage_opinions.append(average_opinion)
