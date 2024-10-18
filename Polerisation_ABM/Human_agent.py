@@ -11,19 +11,19 @@ class Human:
         self.scepticism = scepticism
         #self.influence
 
-    def adjust_coordinate(self, coord, environment_instance):
+    def adjust_coordinate(self, coord, environment_instance_size):
         '''Ensures agents do not leave the environment'''
-        if coord >= environment_instance.size:
-            return environment_instance.size - 1
+        if coord >= environment_instance_size:
+            return environment_instance_size - 1
         elif coord <= 0:
             return coord + 1
         else:
             return coord + random.randint(-1, 1)
 
-    def move(self, x, y, env_instance):
+    def move(self, x, y, env_instance_size):
         '''Moves the human to a new position'''
-        self.newx = self.adjust_coordinate(x, env_instance.size)
-        self.newy = self.adjust_coordinate(y, env_instance.size)
+        self.newx = self.adjust_coordinate(x, env_instance_size)
+        self.newy = self.adjust_coordinate(y, env_instance_size)
 
         self.pos = np.array([self.newx, self.newy])
         return self.pos
