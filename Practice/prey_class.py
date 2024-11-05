@@ -19,24 +19,14 @@ class Prey(Parent):
         return self.predator_separation_vector
     
     def update_prey(self, birds, environment):
-        self.dir += (self.alignment_factor * self.calculate_steering_vector(birds)[0]
-                    + self.cohesion_factor * self.calculate_steering_vector(birds)[1]
-                    + self.separation_factor * self.calculate_steering_vector(birds)[2]
+        steering_vectors = self.calculate_steering_vector(birds, environment)
+
+        self.dir += (self.alignment_factor * steering_vectors[0]
+                    + self.cohesion_factor * steering_vectors[1]
+                    + self.separation_factor * steering_vectors[2]
+                    + steering_vectors[3] * 8
                     + self.calculate_predator_separation_vector(birds))
-        self.dir /= np.linalg.norm(self.dir)   
+        self.dir /= np.linalg.norm(self.dir)  
+        #print((f"Vectors: {steering_vectors}, Position: {self.pos}, Direction: {self.dir}"))
+ 
         self.pos += self.dir * self.speed
-
-        
-        #print(self.point_is_out_of_bounds(self.pos[0], environment))
-        if self.point_is_out_of_bounds(self.pos[0], environment):
-            self.pos[0] = self.apply_boundary_condition(self.pos[0], environment)
-            self.dir[0] *= -1
-        else:
-            self.pos[0] += self.dir[0] * self.speed
-
-        if self.point_is_out_of_bounds(self.pos[1], environment):
-            self.pos[1] = self.apply_boundary_condition(self.pos[1], environment)
-            self.dir[1] *= -1  
-        else:
-            self.pos[1] += self.dir[1] * self.speed 
-        
