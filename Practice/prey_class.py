@@ -21,10 +21,11 @@ class Prey(Parent):
     def update_prey(self, birds, environment):
         steering_vectors = self.calculate_steering_vector(birds, environment)
 
-        self.dir += (self.alignment_factor * steering_vectors[0]
-                    + self.cohesion_factor * steering_vectors[1]
-                    + self.separation_factor * steering_vectors[2]
-                    + steering_vectors[3] * 8
+        
+        self.dir += (steering_vectors[0]
+                    + steering_vectors[1]
+                    + steering_vectors[2]
+                    + steering_vectors[3]
                     + self.calculate_predator_separation_vector(birds))
         self.dir /= np.linalg.norm(self.dir)  
         #print((f"Vectors: {steering_vectors}, Position: {self.pos}, Direction: {self.dir}"))

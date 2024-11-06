@@ -17,7 +17,7 @@ for _ in range(0):
     all_predators.append(Predator(x, y))
 
 all_prey = []
-for _ in range(25):
+for _ in range(30):
     x = random.uniform(-env.size*0.5, env.size*0.5)
     y = random.uniform(-env.size*0.5, env.size*0.5)
     all_prey.append(Prey(x, y))
@@ -33,6 +33,12 @@ scatt = ax.scatter([bird.pos[0] for bird in all_birds],
                     [bird.pos[1] for bird in all_birds],
                     c=['blue' if isinstance(bird, Prey) else 'red' for bird in all_birds],
                       s=10)
+centre = [0,0]
+radius = env.size*0.5
+theta = np.linspace(0, 2*np.pi, 100)
+x = centre[0] + radius * np.cos(theta)
+y = centre[1] + radius * np.sin(theta)
+ax.plot(x, y, c='black')
 
 #Update function for the animation
 def update_frames(frame):
@@ -47,7 +53,7 @@ def update_frames(frame):
     return scatt
 
 # Create the animation
-anim = animation.FuncAnimation(fig, update_frames, frames=200, interval=50, repeat=True)
+anim = animation.FuncAnimation(fig, update_frames, frames=500, interval=50, repeat=True)
 plt.show()
 from IPython.display import HTML
 HTML(anim.to_jshtml())
