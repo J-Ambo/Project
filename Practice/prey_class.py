@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from parent_class import Parent
 from environment_class import Environment
 from predator_class import Predator
@@ -19,15 +20,23 @@ class Prey(Parent):
         return self.predator_separation_vector
     
     def update_prey(self, birds, environment):
+        '''update_prey is called every timestep for all (prey)agents.
+        It calculates the relevant steering vectors for an agent and 
+        updates their direction vector according to proximity to nearest
+        neighbours.'''
         steering_vectors = self.calculate_steering_vector(birds, environment)
 
-        
-        self.dir += (steering_vectors[0]
-                    + steering_vectors[1]
-                    + steering_vectors[2]
-                    + steering_vectors[3]
-                    + self.calculate_predator_separation_vector(birds))
-        self.dir /= np.linalg.norm(self.dir)  
+        v = np.random.normal(0, 0.2, (360,2))
+        random_vector = random.choice(v)
+        #random_vector /= np.linalg.norm(random_vector)
+
+        if self.neighbours_in_repulsive_zone > 0:
+            self.dir += steering_vectors[2]
+        else:
+            self.dir += (steering_vectors[0]
+                        + steering_vectors[1])
+            
+        self.dir += steering_vectors[3] + random_vector  #regardless of neighbours agents will always steer
+        self.dir /= np.linalg.norm(self.dir)             #away from walls and have a random component in their motion
         #print((f"Vectors: {steering_vectors}, Position: {self.pos}, Direction: {self.dir}"))
- 
         self.pos += self.dir * self.speed
