@@ -10,14 +10,20 @@ from prey_class import Prey
 env = Environment(50)
 all_predators = []
 for _ in range(0):
-    x = random.uniform(-env.size*0.5, env.size*0.5)
-    y = random.uniform(-env.size*0.5, env.size*0.5)
+    r = random.uniform(0, env.radius)
+    theta = random.uniform(0, 2*np.pi)
+
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
     all_predators.append(Predator(x, y))
 
 all_prey = []
-for _ in range(10):
-    x = random.uniform(-env.size*0.5, env.size*0.5)
-    y = random.uniform(-env.size*0.5, env.size*0.5)
+for _ in range(1):
+    r = random.uniform(0, env.radius)
+    theta = random.uniform(0, 2*np.pi)
+
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
     all_prey.append(Prey(x, y))
 
 all_birds = all_prey + all_predators
@@ -25,14 +31,14 @@ all_birds = all_prey + all_predators
 #Animation using FuncAnimation method
 fig, ax = plt.subplots(figsize=(6,6))
 ax.set_axis_off()
-ax.set_xlim(-env.size*0.52, env.size*0.52)
-ax.set_ylim(-env.size*0.52, env.size*0.52)
+ax.set_xlim(-env.radius*1.01, env.radius*1.01)
+ax.set_ylim(-env.radius*1.01, env.radius*1.01)
 scatt = ax.scatter([bird.pos[0] for bird in all_birds],
                     [bird.pos[1] for bird in all_birds],
                     c=['blue' if isinstance(bird, Prey) else 'red' for bird in all_birds],
                       s=10)
 centre = [0,0]
-radius = env.size*0.5
+radius = env.radius
 theta = np.linspace(0, 2*np.pi, 100)
 x = centre[0] + radius * np.cos(theta)
 y = centre[1] + radius * np.sin(theta)
