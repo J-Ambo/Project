@@ -11,7 +11,7 @@ class Parent:
         self.speed = np.random.choice(np.linspace(0.4, 0.5, 5))                     # Speed of the bird
         (self.radius_of_repulsion,
         self.radius_of_alignment, 
-        self.radius_of_attraction)  = 1, 4, 10
+        self.radius_of_attraction)  = 1, 4, 14
         
         (self.neighbours_in_repulsive_zone, 
          self.neighbours_in_alignment_zone, 
@@ -36,6 +36,11 @@ class Parent:
 
         for bird in other_birds:
             if bird == self:
+                if (environment.radius)*0.9 < np.linalg.norm(self.pos) < environment.radius:
+                    distance_from_boundary = np.linalg.norm(self.pos - environment.radius)
+                    self.wall_vector = -self.pos/distance_from_boundary     #/np.linalg.norm(self.pos)
+                elif np.linalg.norm(self.pos) >= environment.radius:
+                    self.wall_vector = -self.pos
                 continue
 
             if self.calculate_distance_to_birds(bird) <= self.radius_of_repulsion:
@@ -49,9 +54,6 @@ class Parent:
             if self.radius_of_alignment <= self.calculate_distance_to_birds(bird) <= self.radius_of_attraction:
                 self.average_position_vector += bird.pos
                 self.neighbours_in_attraction_zone += 1
-
-            if np.linalg.norm(self.pos) >= (environment.size*0.5) - self.radius_of_repulsion*0.5:
-                self.wall_vector = -self.pos#/np.linalg.norm(self.pos)
 
         vectors = np.array([self.alignment_vector, self.cohesion_vector, self.separation_vector, self.wall_vector])
         return vectors
