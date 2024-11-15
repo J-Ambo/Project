@@ -7,7 +7,7 @@ from predator_class import Predator
 from prey_class import Prey
 '''This script is an alternative to the plt.pause method for creating an animation of the model.'''
 
-POPULATION = 50
+POPULATION = 5
 ARENA_RADIUS = 70
 TIMESTEPS = 500
 
@@ -17,8 +17,8 @@ for _ in range(0):
     r = random.uniform(0, env.radius)
     theta = random.uniform(0, 2*np.pi)
 
-    x = r * np.cos(theta)
-    y = r * np.sin(theta)
+    x = r * np.cos(theta)*0.9
+    y = r * np.sin(theta)*0.9
     all_predators.append(Predator(x, y))
 
 all_prey = []
@@ -26,8 +26,8 @@ for _ in range(POPULATION):
     r = random.uniform(0, env.radius)
     theta = random.uniform(0, 2*np.pi)
 
-    x = r * np.cos(theta)
-    y = r * np.sin(theta)
+    x = r * np.cos(theta)*0.9
+    y = r * np.sin(theta)*0.9
     all_prey.append(Prey(x, y))
 
 all_agents = all_prey + all_predators
@@ -50,11 +50,14 @@ ax.plot(x, y, c='black')
 
 #Update function for the animation
 def update_frames(frame):
-    for prey in all_prey:
-        prey.update_prey(all_agents, env)
+    all_steering_vectors = np.zeros((len(all_agents), 4, 2))
+    
+    for index, agent in enumerate(all_agents): 
+        steering_vector = agent.calculate_steering_vector(all_agents, env)      
+        all_steering_vectors[index] = steering_vector
 
-    for predator in all_predators:
-        predator.update_predator(all_agents, env)
+    for index, agent in enumerate(all_agents):
+        agent.update_position(all_steering_vectors[index])
 
     scatt.set_offsets([(agent.position[0], agent.position[1]) for agent in all_agents])
     return scatt
