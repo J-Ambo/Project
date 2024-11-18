@@ -6,21 +6,23 @@ import random
 class Parent:
     def __init__(self, x, y): 
         self.position = np.array([x, y])   
-        self.direction = np.array([round(random.uniform(-1, 1), 2), round(random.uniform(-1, 1), 2)])
+
+        self.direction = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
         self.direction /= np.linalg.norm(self.direction)
-        self.speed = np.random.choice(np.linspace(0.4, 0.5, 5))
-        self.perception_angle = np.deg2rad(70)
+
+        self.speed = np.clip(np.random.normal(loc=0.5, scale=0.1), 0.45, 0.55)     #np.random.choice(np.linspace(0.5, 1, 5))
+        self.perception_angle = np.deg2rad(270)
 
         (self.radius_of_repulsion,
         self.radius_of_alignment, 
-        self.radius_of_attraction) = 2, 6, 16
+        self.radius_of_attraction) = 3, 9, 11
         
         (self.neighbours_in_repulsive_zone, 
          self.neighbours_in_alignment_zone, 
          self.neighbours_in_attraction_zone) = 0, 0, 0
         
     def calculate_distance_to_agent(self, other_agent):
-        distance = np.linalg.norm(self.position - other_agent.position,)
+        distance = np.linalg.norm(self.position - other_agent.position)
         return max(distance, 0.01)
 
     def calculate_steering_vector(self, other_agents, environment):
@@ -33,9 +35,7 @@ class Parent:
          self.cohesion_vector, 
          self.wall_vector) = np.zeros((4,2))
 
-        for index, agent in enumerate(other_agents):
-            '''agent_positions = environment.calculate_agent_positions(other_agents)
-            agent.position = agent_positions[index]'''
+        for agent in other_agents:
 
             distance_between_agents = self.calculate_distance_to_agent(agent)
             direction_to_other_agent = (agent.position - self.position) / distance_between_agents
@@ -47,11 +47,9 @@ class Parent:
                 
                 if environment.radius * 0.9 < distance_from_origin < environment.radius:
                     self.wall_vector = -self.position * np.exp(-distance_from_boundary)
-                elif distance_from_origin >= environment.radius:
-                    self.wall_vector = -self.position
                 continue
 
-            if False:    
+            if True:    
                 if angle_to_other_agent > self.perception_angle/2:
                     continue
 
@@ -72,8 +70,3 @@ class Parent:
                             self.cohesion_vector, 
                             self.wall_vector])
         return vectors
-    
-
-dot = np.dot(np.array([-1,1])/np.sqrt(2), np.array([0,-1]))
-np.arccos(dot)
-np.rad2deg(np.arccos(dot))
