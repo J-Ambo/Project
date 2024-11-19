@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.neighbors import KDTree
 import random
 
 '''This script contains the Parent class, from which the Predator and Prey classes inherit key attributes and methods.'''
@@ -15,7 +16,7 @@ class Parent:
 
         (self.radius_of_repulsion,
         self.radius_of_alignment, 
-        self.radius_of_attraction) = 3, 9, 11
+        self.radius_of_attraction) = 4, 9, 11
         
         (self.neighbours_in_repulsive_zone, 
          self.neighbours_in_alignment_zone, 
@@ -24,6 +25,23 @@ class Parent:
     def calculate_distance_to_agent(self, other_agent):
         distance = np.linalg.norm(self.position - other_agent.position)
         return max(distance, 0.01)
+    
+    def calculate_nearest_neighbour_distance(self, other_agents):
+        distances = [self.calculate_distance_to_agent(agent) for agent in other_agents]
+        average_distance = np.mean(distances)
+        return min(distances), 
+
+    def calcualte_neighbours(self, other_agents):
+        agent_positions = np.array([agent.position for agent in other_agents])
+        tree = KDTree(agent_positions)
+
+        query_point = self.position.reshape(1, -1)
+        indices_repulsion_radius_neighbours = tree.query_radius(query_point, r=self.radius_of_repulsion)
+        indices_alignment_radius_neighbours = tree.query_radius(query_point, r=self.radius_of_alignment)
+        indices_attraction_radius_neighbours = tree.query_radius(query_point, r=self.radius_of_attraction)
+
+        distances, indices = tree.query(agent_positions, k=3)
+        return distances, indices, indices_repulsion_radius_neighbours
 
     def calculate_steering_vector(self, other_agents, environment):
         (self.neighbours_in_repulsive_zone,
@@ -70,3 +88,5 @@ class Parent:
                             self.cohesion_vector, 
                             self.wall_vector])
         return vectors
+
+
