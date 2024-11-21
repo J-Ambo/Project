@@ -35,8 +35,8 @@ class Prey(Parent):
         threshold_rotation_matrix = np.array([[np.cos(np.pi/8), -np.sin(np.pi/8)], [np.sin(np.pi/8), np.cos(np.pi/8)]])
 
         if self.neighbours_in_repulsive_zone > 0:
-            target_direction += steering_vectors[0] + 0.1*(steering_vectors[1] + steering_vectors[2])
-        elif self.neighbours_in_alignment_zone > 0 or self.neighbours_in_attraction_zone > 0:
+            target_direction += steering_vectors[0] #+ 0.1*(steering_vectors[1] + steering_vectors[2])
+        if self.neighbours_in_alignment_zone > 0 or self.neighbours_in_attraction_zone > 0:
             target_direction += steering_vectors[1] + steering_vectors[2]
         else:
             target_direction += self.direction

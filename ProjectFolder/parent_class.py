@@ -3,6 +3,9 @@ from sklearn.neighbors import KDTree
 import random
 
 '''This script contains the Parent class, from which the Predator and Prey classes inherit key attributes and methods.'''
+'''Abbreviations: rr = radius of repulsion;  ral = radius of alignment;  rat = radius of attraction;
+                    rz = repulsion zone;  alz = alignmnet zone;  atz = attraction zone;
+                    nn = number of neighbours'''
 
 class Parent:
     def __init__(self, x, y): 
@@ -31,19 +34,35 @@ class Parent:
         average_distance = np.mean(distances)
         return min(distances), 
 
-    def calcualte_neighbours(self, other_agents):
+    def find_neighbours(self, other_agents):
         agent_positions = np.array([agent.position for agent in other_agents])
         tree = KDTree(agent_positions)
 
-        query_point = self.position.reshape(1, -1)
-        indices_repulsion_radius_neighbours = tree.query_radius(query_point, r=self.radius_of_repulsion)
-        indices_alignment_radius_neighbours = tree.query_radius(query_point, r=self.radius_of_alignment)
-        indices_attraction_radius_neighbours = tree.query_radius(query_point, r=self.radius_of_attraction)
+        distances, indices = tree.query(agent_positions, k=5)
+        return distances, indices, tree
+    
+    def count_neighbours(self, tree, focus_point):
 
-        distances, indices = tree.query(agent_positions, k=3)
-        return distances, indices, indices_repulsion_radius_neighbours
+        indices_of_rr_neighbours = tree.query_radius(focus_point, r=self.radius_of_repulsion)
+        indices_of_rz_neighbours = [item for item in indices_of_rr_neighbours[0] if item != 0]
+        nn_within_rr = len(indices_of_rr_neighbours[0]) - 1  #minus one such that self is not counted as a neighbour.
+        nn_in_rz = nn_within_rr #number of neighbours in the repulsion zone equals number of neighbours within the radius of repulsion.
 
-    def calculate_steering_vector(self, other_agents, environment):
+        indices_of_ral_neighbours = tree.query_radius(focus_point, r=self.radius_of_alignment)
+        indices_of_alz_neighbours = [item for item in indices_of_ral_neighbours[0] if item not in indices_of_rr_neighbours[0]]
+        nn_within_ral = len(indices_of_ral_neighbours[0]) - 1
+        nn_in_alz = nn_within_ral - nn_within_rr
+
+        indices_of_rat_neighbours = tree.query_radius(focus_point, r=self.radius_of_attraction)
+        indices_of_atz_neighbours = [item for item in indices_of_rat_neighbours[0] if item not in indices_of_ral_neighbours[0]]
+        nn_within_rat = len(indices_of_rat_neighbours[0]) - 1
+        nn_in_atz = nn_within_rat - nn_within_ral
+        return nn_in_rz, nn_in_alz, nn_in_atz, indices_of_rz_neighbours, indices_of_alz_neighbours, indices_of_atz_neighbours
+
+
+
+
+    def calculate_steering_vectors(self, other_agents, environment, distances, indices, tree):
         (self.neighbours_in_repulsive_zone,
         self.neighbours_in_alignment_zone, 
         self.neighbours_in_attraction_zone) = 0, 0, 0 
@@ -52,9 +71,58 @@ class Parent:
          self.alignment_vector, 
          self.cohesion_vector, 
          self.wall_vector) = np.zeros((4,2))
+        
+        steering_vectors = np.zeros((len(other_agents), 4, 2))
 
-        for agent in other_agents:
+        for i in range(len(indices)):
+            focus_point = other_agents[i].position.reshape(1,-1)
+            distance_from_origin = np.linalg.norm(other_agents[i].position)
+            distance_from_boundary = environment.radius - distance_from_origin
+            n_rz, n_alz, n_atz, i_rz, i_alz, i_atz = self.count_neighbours(tree, focus_point)
 
+            if n_rz > 0 and i not in i_rz:
+                separation_distances_rz = {n: distances[i, np.where(indices[i] == n)[0][0]] for n in i_rz if n != i}
+                print(separation_distances_rz)
+                other_agents[i].separation_vector = -sum((other_agents[n].position - other_agents[i].position)/separation_distances_rz[n] for n in i_rz)
+            else:
+                other_agents[i].separation_vector = np.array([0,0])
+            #print(other_agents[i].separation_vector.shape)
+            #print(other_agents[i].separation_vector)
+
+            if n_alz > 0:
+                other_agents[i].alignment_vector = sum(other_agents[n].direction for n in i_alz)
+            else:
+                other_agents[i].alignment_vector = np.array([0,0])
+
+            if n_atz > 0 and i not in i_atz:
+                separation_distances_atz = {n: distances[i, np.where(indices[i] == n)[0][0]] for n in i_atz if n != i}
+                other_agents[i].attraction_vector = sum((other_agents[n].position - other_agents[i].position)/separation_distances_atz[n] for n in i_atz)
+            else:
+                other_agents[i].attraction_vector = np.array([0,0])
+
+            if environment.radius * 0.9 < distance_from_origin < environment.radius:
+                other_agents[i].wall_vector = -self.position * np.exp(-distance_from_boundary)
+            else:
+                other_agents[i].wall_vector = np.array([0,0])
+
+            steering_vectors[i] = np.array([other_agents[i].separation_vector, other_agents[i].alignment_vector, other_agents[i].attraction_vector, other_agents[i].wall_vector])
+        return steering_vectors
+            #neighbour_indices = indices[i,1:]
+            # neighbour_distances = distances[i,1:]
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        '''for agent in other_agents:
             distance_between_agents = self.calculate_distance_to_agent(agent)
             direction_to_other_agent = (agent.position - self.position) / distance_between_agents
             angle_to_other_agent = np.arccos(np.dot(self.direction, direction_to_other_agent))
@@ -87,6 +155,6 @@ class Parent:
                             self.alignment_vector, 
                             self.cohesion_vector, 
                             self.wall_vector])
-        return vectors
+        return vectors'''
 
 
