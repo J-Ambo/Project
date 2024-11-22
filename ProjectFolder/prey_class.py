@@ -30,14 +30,16 @@ class Prey(Parent):
 
         target_direction = np.zeros(2)
         random_angle = np.random.normal(0, np.pi/16)
-        random_angle = np.clip(random_angle, -np.pi/16, np.pi/16)
+        random_angle = np.clip(random_angle, -np.pi/6, np.pi/6)
         random_rotation_matrix = np.array([[np.cos(random_angle), -np.sin(random_angle)], [np.sin(random_angle), np.cos(random_angle)]])
         threshold_rotation_matrix = np.array([[np.cos(np.pi/8), -np.sin(np.pi/8)], [np.sin(np.pi/8), np.cos(np.pi/8)]])
 
         if self.neighbours_in_repulsive_zone > 0:
-            target_direction += steering_vectors[0] + 0.1*(steering_vectors[1] + steering_vectors[2])
-        elif self.neighbours_in_alignment_zone > 0 or self.neighbours_in_attraction_zone > 0:
-            target_direction += steering_vectors[1] + steering_vectors[2]
+            target_direction += steering_vectors[0] #+ 0.1*(steering_vectors[1] + steering_vectors[2])
+        if self.neighbours_in_alignment_zone > 0:
+            target_direction += steering_vectors[1]
+        if self.neighbours_in_attraction_zone > 0:
+             target_direction += steering_vectors[2]
         else:
             target_direction += self.direction
         

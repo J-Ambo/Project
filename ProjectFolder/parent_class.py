@@ -15,7 +15,7 @@ class Parent:
 
         (self.radius_of_repulsion,
         self.radius_of_alignment, 
-        self.radius_of_attraction) = 3, 9, 11
+        self.radius_of_attraction) = 1, 6, 15
         
         (self.neighbours_in_repulsive_zone, 
          self.neighbours_in_alignment_zone, 
@@ -35,11 +35,13 @@ class Parent:
          self.cohesion_vector, 
          self.wall_vector) = np.zeros((4,2))
 
+        position_sum = np.zeros(2)
         for agent in other_agents:
 
             distance_between_agents = self.calculate_distance_to_agent(agent)
             direction_to_other_agent = (agent.position - self.position) / distance_between_agents
             angle_to_other_agent = np.arccos(np.dot(self.direction, direction_to_other_agent))
+            position_sum = np.vstack((position_sum, agent.position))
 
             if agent == self:
                 distance_from_origin = np.linalg.norm(self.position)
@@ -61,9 +63,11 @@ class Parent:
                 self.neighbours_in_alignment_zone += 1
                 self.alignment_vector += agent.direction / np.linalg.norm(agent.direction)
                 
-            if self.radius_of_alignment < distance_between_agents <= self.radius_of_attraction:
+            '''if self.radius_of_alignment < distance_between_agents <= self.radius_of_attraction:
                 self.neighbours_in_attraction_zone += 1
-                self.cohesion_vector += (agent.position - self.position) / distance_between_agents
+                self.cohesion_vector += (agent.position - self.position) / distance_between_agents'''
+        average_position = np.mean(position_sum[1:], axis=0)
+        self.cohesion_vector = (average_position - self.position) / np.linalg.norm(average_position - self.position)
 
         vectors = np.array([self.separation_vector, 
                             self.alignment_vector, 
