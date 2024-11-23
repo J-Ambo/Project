@@ -21,47 +21,7 @@ class Prey(Parent):
         if number_of_neighbours > 0:
             self.predator_separation_vector /= number_of_neighbours
         return self.predator_separation_vector
-    
-    def update_position(self, steering_vectors):
-        '''update_position is called every timestep for all (prey)agents.
-        It calculates the relevant steering vectors for an agent and 
-        updates their direction vector according to proximity to nearest
-        neighbours.'''
 
-        target_direction = np.zeros(2)
-        random_angle = np.random.normal(0, np.pi/16)
-        random_angle = np.clip(random_angle, -np.pi/16, np.pi/16)
-        random_rotation_matrix = np.array([[np.cos(random_angle), -np.sin(random_angle)], [np.sin(random_angle), np.cos(random_angle)]])
-        threshold_rotation_matrix = np.array([[np.cos(np.pi/8), -np.sin(np.pi/8)], [np.sin(np.pi/8), np.cos(np.pi/8)]])
-
-        if self.neighbours_in_repulsive_zone > 0:
-            target_direction += steering_vectors[0] #+ 0.1*(steering_vectors[1] + steering_vectors[2])
-        if self.neighbours_in_alignment_zone > 0 or self.neighbours_in_attraction_zone > 0:
-            target_direction += steering_vectors[1] + steering_vectors[2]
-        else:
-            target_direction += self.direction
-        
-        target_direction += steering_vectors[3]       #regardless of neighbours, agents will always steer away from walls.    
-    
-        target_direction /= np.linalg.norm(target_direction)
-        angle_to_target_direction = np.arccos(np.clip(np.dot(self.direction, target_direction), -1.0, 1.0))
-        
-        if angle_to_target_direction < np.pi / 8:  # threshold angle
-            self.direction = target_direction
-        else:
-            z_cross_component = self.direction[0] * target_direction[1] - self.direction[1] * target_direction[0]
-            if z_cross_component > 0:
-                self.direction = np.dot(threshold_rotation_matrix, self.direction)
-            else:
-                self.direction = np.dot(threshold_rotation_matrix.T, self.direction)
-        
-        
-
-        self.direction = np.dot(random_rotation_matrix, self.direction)        #rotate the diretion vector by a random angle.
-        self.direction /= np.linalg.norm(self.direction) 
-        
-        self.position += self.direction * self.speed
-        self.position = np.array([round(self.position[0], 2), round(self.position[1], 2)])
 
 
 
