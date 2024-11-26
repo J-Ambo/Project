@@ -9,17 +9,17 @@ from data_class import DataRecorder
 '''This script is a alternative to matplotlib.animation.FuncAnimation for creating
  an animation of the model. It uses plt.pause between each iteration to update the plot.'''
 
-POPULATION = 20
-ARENA_RADIUS = 70
+POPULATION = 100
+ARENA_RADIUS = 50
 TIMESTEPS = 500
 
 env = Environment(ARENA_RADIUS)
-pop = Population(population_size=POPULATION, number_of_neighbours=5, environment=env)
+pop = Population(population_size=POPULATION, number_of_neighbours=60, environment=env)
 all_positions = pop.population_positions
 data = DataRecorder(pop, TIMESTEPS)
 
 #Animation using plt.pause method
-fig, ax1 = plt.subplots( figsize=(5, 5))
+fig, ax1 = plt.subplots(figsize=(5, 5))
 ax1.set_axis_off()
 ax1.set_xlim(-env.radius*1.01, env.radius*1.01)
 ax1.set_ylim(-env.radius*1.01, env.radius*1.01)
@@ -47,6 +47,7 @@ rotation_data = data.get_data()[2]
 
 fig, ax = plt.subplots()
 time = np.linspace(0, TIMESTEPS, TIMESTEPS)
+ax.set_ylim(-0.05,1.05)
 ax.plot(time, polarisation_data, label='Polarisation', c='red')
 ax.plot(time, rotation_data, label='Rotation', c='blue')
 ax.legend()

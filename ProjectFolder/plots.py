@@ -30,11 +30,19 @@ random_rotation_matrices[:, 0, 1] = -s
 random_rotation_matrices[:, 1, 0] = s
 random_rotation_matrices[:, 1, 1] = c
 
+
+
+print(random_rotation_matrices)
+# Transpose individual matrices in random_rotation_matrices
+transposed_matrices = np.transpose(random_rotation_matrices, axes=(0, 2, 1))
+print(transposed_matrices)
+result = np.matmul(random_rotation_matrices, population_directions[:, :, np.newaxis])
+print(result[:,:, 0])
+
 # Example of broadcasting matrix multiplication
 A = np.array([[[1, 0], [0, 1]], [[1, 0], [0, 2]]])
 B = np.array([[1, 0], [1, 1]])[:, :, np.newaxis]
-#print(A@B)
 # Broadcasting matrix multiplication
 result = A@B #np.matmul(A, B)
 result = result[:, :, 0]
-print(result)
+#print(result)

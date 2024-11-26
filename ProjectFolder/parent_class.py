@@ -22,12 +22,12 @@ class Parent:
         self.minimum_turning_radius = 0.2 * self.body_length
         self.maximal_turning_angle = np.deg2rad(60)  #np.arcsin(self.speed / (2 * self.minimum_turning_radius))
 
-        self.threshold_rotation_matrix = np.array([[np.cos(self.maximal_turning_angle), -np.sin(self.maximal_turning_angle)],
+        self.maximal_rotation_matrix = np.array([[np.cos(self.maximal_turning_angle), -np.sin(self.maximal_turning_angle)],
                                                [np.sin(self.maximal_turning_angle), np.cos(self.maximal_turning_angle)]])
 
         (self.radius_of_repulsion,
         self.radius_of_alignment, 
-        self.radius_of_attraction) = 1, 3, 11
+        self.radius_of_attraction) = 3, 5, 20
         
         (self.neighbours_in_repulsive_zone, 
          self.neighbours_in_alignment_zone, 
