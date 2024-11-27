@@ -5,7 +5,7 @@ class DataRecorder:
         self.all_agents = population.population_array
         self.population = population
 
-        self.data = np.zeros((time, len(self.all_agents), 2, 2))
+        self.data = np.zeros((time, len(self.all_agents), 2, self.population.dimension))
         self.polarisation_data = np.zeros((time))
         self.rotation_data = np.zeros((time))
 
