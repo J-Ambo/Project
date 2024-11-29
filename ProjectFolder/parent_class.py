@@ -27,7 +27,7 @@ class Parent:
 
         (self.radius_of_repulsion,
         self.radius_of_alignment, 
-        self.radius_of_attraction) = 1, 5, 20
+        self.radius_of_attraction) = 2, 4, 20
         
         (self.repulsion_vector, 
          self.alignment_vector, 

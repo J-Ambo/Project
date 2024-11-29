@@ -17,7 +17,7 @@ class Population:
         phi = np.random.uniform(0, 2*np.pi, population_size)
         if self.dimension == 3:
             theta = np.random.uniform(0, np.pi, population_size)
-            z = r * np.cos(theta)
+            z = r * np.cos(theta)*0.5
         else:
             theta = np.full(population_size, np.pi/2)
             z = np.zeros(population_size)
@@ -69,6 +69,8 @@ class Population:
                 agent_i_index = nearest_neighbour_indices[i]
                 agent_i = self.population_array[agent_i_index]
                 agent_i_distance = nearest_neighbour_distances[i]
+                agent_i.position = self.population_positions[agent_i_index]
+                agent_i.direction = self.population_directions[agent_i_index]
 
                 direction_to_agent_i = (agent_i.position - agent_n.position) / agent_i_distance
                 angle_to_agent_i = np.arccos(np.clip(np.dot(agent_n.direction, direction_to_agent_i), -1.0, 1.0))
@@ -87,47 +89,32 @@ class Population:
                     agent_n.attraction_vector += (agent_i.position - agent_n.position)/agent_i_distance
 
             vectors[n] = np.array([agent_n.repulsion_vector, agent_n.alignment_vector, agent_n.attraction_vector, agent_n.wall_vector])  
-        return vectors
+        steering_vectors = np.round(vectors, 2)
+        return steering_vectors
 
     def update_positions(self, environment):
         steering_vectors = self.calculate_vectors(environment)
-        average_position = np.mean(self.population_positions, axis=0)
-
+        sum_of_vectors = np.sum(steering_vectors, axis=1)
         # Calculate average position to each agent
+        average_position = np.mean(self.population_positions, axis=0)
         average_position_to_agents = self.population_positions - average_position
         average_position_to_agents /= np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis]
-        
-        # Sum of steering vectors
-        sum_of_vectors = np.sum(steering_vectors, axis=1)
         
         # Determine target directions
         target_directions = np.where(np.all(sum_of_vectors == 0, axis=1)[:, np.newaxis], self.population_directions, sum_of_vectors)
         target_directions /= np.linalg.norm(target_directions, axis=1)[:, np.newaxis]
+        target_directions = np.round(target_directions, 2)
 
         # Calculate angles to target directions
         dot_products = np.einsum('ij,ij->i', self.population_directions, target_directions)
         angles_to_target_directions = np.arccos(np.clip(dot_products, -1.0, 1.0))
 
         # Update directions based on maximal turning angle
-        maximal_angles = np.full(self.population_size, self.population_array[0].maximal_turning_angle)
-        maximal_rotation_matrices = np.zeros((self.population_size, self.dimension, self.dimension))
-    
-        c = np.cos(maximal_angles)
-        s = np.sin(maximal_angles)
-        maximal_rotation_matrices[:, 0, 0] = c
-        maximal_rotation_matrices[:, 0, 1] = -s
-        maximal_rotation_matrices[:, 0, 2] = 0
-        maximal_rotation_matrices[:, 1, 0] = s
-        maximal_rotation_matrices[:, 1, 1] = c
-        maximal_rotation_matrices[:, 1, 2] = 0
-        maximal_rotation_matrices[:, 2, 0] = 0
-        maximal_rotation_matrices[:, 2, 1] = 0
-        maximal_rotation_matrices[:, 2, 2] = 1
-
         mask = angles_to_target_directions < self.population_array[0].maximal_turning_angle
 
         if self.dimension == 3:
-            cross_products = np.where(target_directions!=self.population_directions, np.cross(self.population_directions, target_directions), self.population_directions)
+            comparison = np.all(self.population_directions == target_directions, axis=1)
+            cross_products = np.where(comparison[:,np.newaxis], self.population_directions, np.cross(self.population_directions, target_directions))
             cross_norms = np.linalg.norm(cross_products, axis=1)
         
             cross_products /= cross_norms[:, np.newaxis]
@@ -145,33 +132,23 @@ class Population:
                     [uz * ux * (1 - c) - uy * s, uz * uy * (1 - c) + ux * s, c + uz**2 * (1 - c)]])
                 
             maximal_directions = np.einsum('ijk,ik->ij', rotation_matrices, self.population_directions)
-        
+
         self.population_directions = np.where(mask[:, np.newaxis], target_directions, maximal_directions)
-        
-        # Apply random rotation and normalize
-        random_angles = np.random.normal(0, 0.2, self.population_size)
-        random_rotation_matrices = np.zeros((self.population_size, self.dimension, self.dimension))
-        c = np.cos(random_angles)
-        s = np.sin(random_angles)
-        random_rotation_matrices[:, 0, 0] = c
-        random_rotation_matrices[:, 0, 1] = -s
-        random_rotation_matrices[:, 1, 0] = s
-        random_rotation_matrices[:, 1, 1] = c
-        self.population_directions = np.matmul(random_rotation_matrices, self.population_directions[:, :, np.newaxis])
-        self.population_directions = self.population_directions[:, :, 0]
+        errors = np.random.normal(0, 0.4, (self.population_size, self.dimension))
+        self.population_directions += errors
+
         self.population_directions /= np.linalg.norm(self.population_directions, axis=1)[:, np.newaxis]
+        self.population_directions = np.round(self.population_directions, 2)
 
         # Update positions
         self.population_positions += self.population_speeds[:, np.newaxis] * self.population_directions
+        self.population_positions = np.round(self.population_positions, 2)
 
-        # Calculate angular momentum
+        # Calculate order parameters
         angular_momenta = np.cross(average_position_to_agents, self.population_directions)
         self.population_angular_momenta = angular_momenta
-
-        # Calculate polarisation and rotation
         sum_of_directions = np.sum(self.population_directions, axis=0)
         self.polarisation = np.linalg.norm(sum_of_directions) / self.population_size
-
         sum_of_angular_momenta = np.sum(self.population_angular_momenta, axis=0)
         self.rotation = np.linalg.norm(sum_of_angular_momenta) / self.population_size
         
