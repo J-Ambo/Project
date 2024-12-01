@@ -3,8 +3,8 @@ import numpy as np
 class DataRecorder:
     def __init__(self, population_size, dimensions, time, repetitions):
         self.data = np.zeros((repetitions, time, population_size, 2, dimensions))
-        self.polarisation_data = np.array([[np.zeros(time), np.zeros(4)] for _ in range(repetitions)], dtype=object)
-        self.rotation_data = np.array([[np.zeros(time), np.zeros(4)] for _ in range(repetitions)], dtype=object)
+        self.polarisation_data = np.array([[np.zeros(time), np.zeros(7)] for _ in range(repetitions)], dtype=object)
+        self.rotation_data = np.array([[np.zeros(time), np.zeros(7)] for _ in range(repetitions)], dtype=object)
     
     def update_parameters(self, repetitions, parameters):
         self.polarisation_data[repetitions][1] = parameters 
@@ -20,14 +20,3 @@ class DataRecorder:
         
     def get_data(self):
         return self.data, self.polarisation_data, self.rotation_data
-
-
-'''
-
-from population_class import Population
-from environment_class import Environment
-env = Environment(10, 3)
-pop = Population(4, 2, env)
-data = DataRecorder(pop, 5, 2)
-print(data.get_data())
-'''
