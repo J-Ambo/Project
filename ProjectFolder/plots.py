@@ -6,53 +6,78 @@ from prey_class import Prey
 from environment_class import Environment
 from population_class import Population
 
-env = Environment(10, dimensions=3)
-#pop = Population()
+animation_on = False
 
-import numpy as np
-import random
-from sklearn.neighbors import KDTree
-from matplotlib import pyplot as plt
-from prey_class import Prey
-from environment_class import Environment
-from population_class import Population
+P_path = r"C:\Users\44771\Documents\Level4Project\ProjectFolder\PolarisationData"
+R_path = r"C:\Users\44771\Documents\Level4Project\ProjectFolder\RotationData"
 
-# Define the population size
-population_size = 3
-population_directions = np.array([[1, 0], [0, 1], [-1, 0]])
-print(np.linalg.norm(population_directions, axis=1))
-# Generate random angles for the population
-random_angles = np.array([np.pi, 0, np.pi/2])#np.random.normal(0, 0.2, population_size)
-random_rotation_matrices = np.zeros((population_size, 2, 2))
-c = np.round(np.cos(random_angles), 2)
-s = np.round(np.sin(random_angles), 2)
-random_rotation_matrices[:, 0, 0] = c
-random_rotation_matrices[:, 0, 1] = -s
-random_rotation_matrices[:, 1, 0] = s
-random_rotation_matrices[:, 1, 1] = c
+polarisation_data = np.load(f'{P_path}/polarisation_data.npy', allow_pickle=True)
+rotation_data = np.load(f'{R_path}/rotation_data.npy', allow_pickle=True)
+print(polarisation_data)
 
-print(random_rotation_matrices)
-# Transpose individual matrices in random_rotation_matrices
-transposed_matrices = np.transpose(random_rotation_matrices, axes=(0, 2, 1))
-print(transposed_matrices)
-result = np.matmul(random_rotation_matrices, population_directions[:, :, np.newaxis])
-print(result[:,:, 0])
+REPETITIONS = polarisation_data[0][1][3]
+TIMESTEPS = polarisation_data[0][1][2]
+time = np.linspace(0, TIMESTEPS, TIMESTEPS)
+for r in range(REPETITIONS):
+    fig, ax = plt.subplots(figsize=(4,3))
+    ax.set_ylim(-0.05,1.05)
+    ax.plot(time, polarisation_data[r][0], label='Polarisation', c='red')
+    ax.plot(time, rotation_data[r][0], label='Rotation', c='blue')
+    ax.legend()
+    ax.set_title(f'Repetition {r+1}')
 
-# Example of broadcasting matrix multiplication
-A = np.array([[[1, 0], [0, 1]], [[1, 0], [0, 2]]])
-B = np.array([[1, 0], [1, 1]])[:, :, np.newaxis]
-result = A@B #np.matmul(A, B)
-result = result[:, :, 0]
+plt.show()
 
 
-spds = np.array([1, 2, 3])
-ad = np.array([0.2, 2.1, 4])
-another = np.array([[1,0], [0,2], [1,1]])
 
-#comparison = spds > 2
 
-comparison = population_directions == another
-#print(comparison)
-#print(np.where(np.all(comparison, axis=1), ad, spds))
-#print(np.all(comparison, axis=1))   
-#print((population_directions[:,0,] == another[:,0,])[:,np.newaxis])
+'''
+if animation_on:
+    fig, ax1 = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(7, 7))
+    #ax1.set_axis_off()
+    ax1.set_xlim3d(-env.radius*1.01, env.radius*1.01)
+    ax1.set_ylim3d(-env.radius*1.01, env.radius*1.01)
+    ax1.set_zlim3d(-env.radius*1.01, env.radius*1.01)
+    ax1.set_xlabel('X')
+    ax1.set_ylabel('Y')
+    ax1.set_zlabel('Z')
+
+    scatter3D = ax1.scatter(np.array([pos[0] for pos in all_positions]),
+                            np.array([pos[1] for pos in all_positions]), 
+                            np.array([pos[2] for pos in all_positions]),
+                            s=10,
+                            c=['blue' if isinstance(agent, Prey) else 'red' for agent in pop.population_array])
+    xyscatter = ax1.scatter(np.array([pos[0] for pos in all_positions]),
+                            np.array([pos[1] for pos in all_positions]), 
+                            np.full(pop.population_size,-env.radius), 
+                            zdir='z', s=10, c='gray', alpha=0.4)
+    xzscatter = ax1.scatter(np.array([pos[0]for pos in all_positions]), 
+                            np.full(pop.population_size,env.radius), 
+                            np.array([pos[2] for pos in all_positions]), 
+                            zdir='y', s=10, c='gray', alpha=0.4)
+    yzscatter = ax1.scatter(np.full(pop.population_size,-env.radius), 
+                            np.array([pos[1] for pos in all_positions]), 
+                            np.array([pos[2] for pos in all_positions]), 
+                            zdir='x', s=10, c='gray', alpha=0.4)
+
+for t in range(TIMESTEPS):            #Update the scatter plot for each timestep
+    pop.update_positions(env)
+    data_recorder.update_data(pop, time=t, repetitions=n)
+    
+    if graph_on:
+        scatter3D._offsets3d = (np.array([pos[0] for pos in pop.population_positions]),
+                                np.array([pos[1] for pos in pop.population_positions]), 
+                                np.array([pos[2] for pos in pop.population_positions]))
+        xyscatter._offsets3d = (np.array([pos[0] for pos in pop.population_positions]), 
+                                np.array([pos[1] for pos in pop.population_positions]),
+                                np.full(pop.population_size,-env.radius))
+        xzscatter._offsets3d = (np.array([pos[0] for pos in pop.population_positions]),
+                                np.full(pop.population_size, env.radius),
+                                np.array([pos[2] for pos in pop.population_positions]))
+        yzscatter._offsets3d = (np.full(pop.population_size,-env.radius),
+                                np.array([pos[1] for pos in pop.population_positions]),
+                                np.array([pos[2] for pos in pop.population_positions]))
+        ax1.set_title(f'Time: {t}')
+        
+        plt.pause(0.001)
+'''
