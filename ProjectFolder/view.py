@@ -1,55 +1,46 @@
 from matplotlib import pyplot as plt
 import random
 import numpy as np
-from prey_class import Prey
+from parent_class import Parent
 from environment_class import Environment
 from population_class import Population
 from data_class import DataRecorder
+import time
 
-'''This script is a alternative to matplotlib.animation.FuncAnimation for creating
- an animation of the model. It uses plt.pause between each iteration to update the plot.'''
+'''This script contains the main sinmulation loop, saving data for later plotting and analysis.'''
 
-POPULATION = 100
-ARENA_RADIUS = 50
-TIMESTEPS = 500
+POPULATION = 300
+NEIGHBOURS = 200    #number of neighbours each agent is influenced by
+ARENA_RADIUS = 150
+TIMESTEPS = 10000
+DIMENSIONS = 3
+REPETITIONS = 5
 
-env = Environment(ARENA_RADIUS)
-pop = Population(population_size=POPULATION, number_of_neighbours=60, environment=env)
-all_positions = pop.population_positions
-data = DataRecorder(pop, TIMESTEPS)
+env = Environment(ARENA_RADIUS, DIMENSIONS)
+data_recorder = DataRecorder(POPULATION, DIMENSIONS, TIMESTEPS, REPETITIONS)
 
-#Animation using plt.pause method
-fig, ax1 = plt.subplots(figsize=(5, 5))
-ax1.set_axis_off()
-ax1.set_xlim(-env.radius*1.01, env.radius*1.01)
-ax1.set_ylim(-env.radius*1.01, env.radius*1.01)
+start_time = time.time()
+for n in range(REPETITIONS):
+    #Parent.increment_ral(n*1.5)     #increment the radius of alignment
+    parameter_array = np.array([POPULATION, NEIGHBOURS, ARENA_RADIUS, TIMESTEPS, DIMENSIONS, REPETITIONS, Parent.ral])
+    pop = Population(population_size=POPULATION, number_of_neighbours=NEIGHBOURS, environment=env)
+    all_positions = pop.population_positions
+    data_recorder.update_parameters(n, parameter_array)
+    print(f"Repetition {n+1}")
+    #print(f"ral {pop.population_array[0].get_ral()}")
+    #print(f"self.ral {pop.population_array[0].radius_of_alignment}")
+    
+    for t in range(TIMESTEPS):
+        pop.update_positions(env)
+        data_recorder.update_data(pop, time=t, repetitions=n)
 
-centre = [0,0]
-radius = env.radius
-theta = np.linspace(0, 2*np.pi, 100)
-x = centre[0] + radius * np.cos(theta)
-y = centre[1] + radius * np.sin(theta)
-ax1.plot(x, y, c='black')
+Pol_path = r"C:\Users\44771\Documents\Level4Project\ProjectFolder\PolarisationData"
+R_path = r"C:\Users\44771\Documents\Level4Project\ProjectFolder\RotationData"
+Pos_path = r"C:\Users\44771\Documents\Level4Project\ProjectFolder\PositionData"
+np.save(f'{Pol_path}/polarisation_data_', data_recorder.get_data()[1])
+np.save(f'{R_path}/rotation_data_', data_recorder.get_data()[2])
+np.save(f'{Pos_path}/position_data_', data_recorder.get_data()[0][:,:,:,0])
 
-scatt = ax1.scatter([pos[0] for pos in all_positions],
-            [pos[1] for pos in all_positions],
-            c=['blue' if isinstance(agent, Prey) else 'red' for agent in pop.population_array],
-           s=10)
-
-for t in range(TIMESTEPS):            #Update the scatter plot for each timestep
-    pop.update_positions(env)
-    data.update_data(time=t)
-    scatt.set_offsets([(pos[0], pos[1]) for pos in all_positions])
-    plt.pause(0.001)
-
-polarisation_data = data.get_data()[1]
-rotation_data = data.get_data()[2]
-
-fig, ax = plt.subplots()
-time = np.linspace(0, TIMESTEPS, TIMESTEPS)
-ax.set_ylim(-0.05,1.05)
-ax.plot(time, polarisation_data, label='Polarisation', c='red')
-ax.plot(time, rotation_data, label='Rotation', c='blue')
-ax.legend()
-
-plt.show()
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time: {execution_time} seconds")

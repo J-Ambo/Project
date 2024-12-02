@@ -8,11 +8,13 @@ import random
                     nn = number of neighbours'''
 
 class Parent:
-    def __init__(self, x, y): 
-        self.position = np.array([x, y])  
-        self.previous_position = np.zeros(2) 
+    ral = 4  #radius of alignment
 
-        self.direction = np.array([random.uniform(-1, 1), random.uniform(-1, 1)])
+    def __init__(self, x, y, z, dimensions): 
+        self.position = np.array([x, y, z])  
+        self.previous_position = np.zeros(dimensions) 
+
+        self.direction = np.random.rand(dimensions)
         self.direction /= np.linalg.norm(self.direction)
         self.previous_direction = self.direction
 
@@ -27,15 +29,23 @@ class Parent:
 
         (self.radius_of_repulsion,
         self.radius_of_alignment, 
-        self.radius_of_attraction) = 3, 5, 20
-        
-        (self.neighbours_in_repulsive_zone, 
-         self.neighbours_in_alignment_zone, 
-         self.neighbours_in_attraction_zone) = 0, 0, 0
-        
+        self.radius_of_attraction) = 2, self.__class__.ral, 1000
+
         (self.repulsion_vector, 
          self.alignment_vector, 
          self.attraction_vector, 
          self.wall_vector) = np.zeros((4,2))
+        
+    @classmethod
+    def increment_ral(cls, increment):
+        cls.ral += increment
+    
+    @classmethod
+    def get_ral(cls):
+        return cls.ral
+    
+
+        
+
 
 

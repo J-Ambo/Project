@@ -8,9 +8,9 @@ from predator_class import Predator
 Differs from the Predator class in that it has a method to steer away from predators, and update its directionection vector accordingly.'''
 
 class Prey(Parent):
-    def __init__(self, x, y):
-        super().__init__(x, y)
-        self.predator_separation_vector = np.zeros(2)
+    def __init__(self, x, y, z, dimensions):
+        super().__init__(x, y, z, dimensions)
+        self.predator_separation_vector = np.zeros(dimensions)
 
     def calculate_predator_separation_vector(self, agents):
         number_of_neighbours = 0
