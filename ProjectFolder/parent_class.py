@@ -15,6 +15,7 @@ class Parent:
         self.previous_position = np.zeros(dimensions) 
 
         self.direction = np.random.rand(dimensions)
+        self.direction = np.random.rand(dimensions)
         self.direction /= np.linalg.norm(self.direction)
         self.previous_direction = self.direction
 
@@ -35,6 +36,18 @@ class Parent:
          self.alignment_vector, 
          self.attraction_vector, 
          self.wall_vector) = np.zeros((4,2))
+        
+    @classmethod
+    def increment_ral(cls, increment):
+        cls.ral += increment
+    
+    @classmethod
+    def get_ral(cls):
+        return cls.ral
+    
+
+        
+
         
     @classmethod
     def increment_ral(cls, increment):

@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import random
 import numpy as np
 from parent_class import Parent
+from parent_class import Parent
 from environment_class import Environment
 from population_class import Population
 from data_class import DataRecorder
