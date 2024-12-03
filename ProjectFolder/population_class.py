@@ -11,7 +11,7 @@ class Population:
         self.n_neighbours = number_of_neighbours
         self.dimension = environment.dimension
 
-        r = np.random.uniform(0, environment.radius, population_size)
+        r = np.random.uniform(0, environment.radius, population_size) * 0.5
         phi = np.random.uniform(0, 2*np.pi, population_size)
         if self.dimension == 3:
             theta = np.random.uniform(0, np.pi, population_size)
@@ -20,8 +20,8 @@ class Population:
             theta = np.full(population_size, np.pi/2)
             z = np.zeros(population_size)
 
-        x = r * np.cos(phi)*np.sin(theta)* 0.5
-        y = r * np.sin(phi)*np.sin(theta) * 0.5
+        x = r * np.cos(phi)*np.sin(theta)
+        y = r * np.sin(phi)*np.sin(theta)
         self.population_array = np.array([Prey(x=x[n], y=y[n], z=z[n], dimensions=self.dimension) for n in range(population_size)], dtype=object)
         self.population_positions = np.array([agent.position for agent in self.population_array])
         self.population_directions = np.array([agent.direction for agent in self.population_array])
@@ -53,11 +53,30 @@ class Population:
         tree = KDTree(all_positions)
         distances, indices = tree.query(all_positions, k=self.n_neighbours+1)
         return distances, indices, tree
+    
+    def find_neighbours_in_zones(self):
+        all_positions = self.population_positions
+        tree = KDTree(all_positions)
+        rat_neighbours = tree.query_radius(all_positions, self.population_array[0].radius_of_attraction,)
+
+        ral_neighbours = tree.query_radius(all_positions, self.population_array[0].radius_of_alignment)
+        rr_neighbours = tree.query_radius(all_positions, self.population_array[0].radius_of_repulsion)
+
+        rz_Nei = rr_neighbours
+        #alz_Nei = np.setdiff1d(ral_neighbours, rr_neighbours)
+        #atz_Nei = np.setdiff1d(rat_neighbours, ral_neighbours)
+        return rr_neighbours, ral_neighbours, rat_neighbours,# rz_Nei, alz_Nei, atz_Nei
+    '''
+    def get_density(self):
+        tree = KDTree(self.population_positions)
+        density = tree.kernel_density(self.population_positions, h=1.5)
+        return density'''
+
+    #def calculate_vectors(self, environment):
+        
 
     def calculate_vectors(self, environment):
         distances, indices, tree = self.find_neighbours()
-        vector_dimension = environment.dimension
-        vectors = np.zeros((self.population_size, 4, vector_dimension))
         vector_dimension = environment.dimension
         vectors = np.zeros((self.population_size, 4, vector_dimension))
         
@@ -71,10 +90,6 @@ class Population:
             distance_from_origin = np.linalg.norm(agent_n.position)
             distance_from_boundary = environment.radius - distance_from_origin
 
-            agent_n.repulsion_vector = np.zeros(vector_dimension)
-            agent_n.alignment_vector = np.zeros(vector_dimension)
-            agent_n.attraction_vector = np.zeros(vector_dimension)
-            agent_n.wall_vector = np.zeros(vector_dimension)
             agent_n.repulsion_vector = np.zeros(vector_dimension)
             agent_n.alignment_vector = np.zeros(vector_dimension)
             agent_n.attraction_vector = np.zeros(vector_dimension)
@@ -99,7 +114,6 @@ class Population:
                 if angle_to_agent_i > agent_n.perception_angle/2:
                     continue
                 
-                
                 if agent_i_distance < agent_n.radius_of_repulsion:
                     agent_n.repulsion_vector += -(agent_i.position - agent_n.position)/agent_i_distance
                     continue
@@ -112,8 +126,6 @@ class Population:
                 
 
             vectors[n] = np.array([agent_n.repulsion_vector, agent_n.alignment_vector, agent_n.attraction_vector, agent_n.wall_vector])  
-        steering_vectors = np.round(vectors, 2)
-        return steering_vectors
         steering_vectors = np.round(vectors, 2)
         return steering_vectors
 
@@ -161,33 +173,7 @@ class Population:
                 
             maximal_directions = np.einsum('ijk,ik->ij', rotation_matrices, self.population_directions)
 
-        if self.dimension == 3:
-            comparison = np.all(self.population_directions == target_directions, axis=1)
-            cross_products = np.where(comparison[:,np.newaxis], self.population_directions, np.cross(self.population_directions, target_directions))
-            cross_norms = np.linalg.norm(cross_products, axis=1)
-        
-            cross_products /= cross_norms[:, np.newaxis]
-            sin_angles = cross_norms
-            cos_angles = dot_products
-            rotation_axes = cross_products
-            rotation_matrices = np.zeros((self.population_size, 3, 3))
-            c = np.cos(self.population_array[0].maximal_turning_angle)
-            s = np.sin(self.population_array[0].maximal_turning_angle)
-            for i in range(self.population_size):
-                ux, uy, uz = rotation_axes[i]
-                rotation_matrices[i] = np.array([
-                    [c + ux**2 * (1 - c), ux * uy * (1 - c) - uz * s, ux * uz * (1 - c) + uy * s],
-                    [uy * ux * (1 - c) + uz * s, c + uy**2 * (1 - c), uy * uz * (1 - c) - ux * s],
-                    [uz * ux * (1 - c) - uy * s, uz * uy * (1 - c) + ux * s, c + uz**2 * (1 - c)]])
-                
-            maximal_directions = np.einsum('ijk,ik->ij', rotation_matrices, self.population_directions)
-
         self.population_directions = np.where(mask[:, np.newaxis], target_directions, maximal_directions)
-        errors = np.random.normal(0, 0.4, (self.population_size, self.dimension))
-        self.population_directions += errors
-
-        self.population_directions /= np.linalg.norm(self.population_directions, axis=1)[:, np.newaxis]
-        self.population_directions = np.round(self.population_directions, 2)
         errors = np.random.normal(0, 0.4, (self.population_size, self.dimension))
         self.population_directions += errors
 
@@ -197,9 +183,7 @@ class Population:
         # Update positions
         self.population_positions += self.population_speeds[:, np.newaxis] * self.population_directions
         self.population_positions = np.round(self.population_positions, 2)
-        self.population_positions = np.round(self.population_positions, 2)
 
-        # Calculate order parameters
         # Calculate order parameters
         angular_momenta = np.cross(average_position_to_agents, self.population_directions)
         self.population_angular_momenta = angular_momenta

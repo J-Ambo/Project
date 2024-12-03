@@ -7,21 +7,20 @@ import time
    an animation of the simulation. It uses plt.pause between each iteration to update the plot.
 '''
 
-animation_on = True
+animation_on = False
 
 Pol_path = r"C:\Users\44771\Documents\Level4Project\ProjectFolder\PolarisationData"
 R_path = r"C:\Users\44771\Documents\Level4Project\ProjectFolder\RotationData"
 Pos_path = r"C:\Users\44771\Documents\Level4Project\ProjectFolder\PositionData"
 
-polarisation_data = np.load(f'{Pol_path}/polarisation_data.npy', allow_pickle=True)
-rotation_data = np.load(f'{R_path}/rotation_data.npy', allow_pickle=True)
-position_data = np.load(f'{Pos_path}/position_data.npy', allow_pickle=True)
+polarisation_data = np.load(f'{Pol_path}/polarisation_data_.npy', allow_pickle=True)
+rotation_data = np.load(f'{R_path}/rotation_data_.npy', allow_pickle=True)
+position_data = np.load(f'{Pos_path}/position_data_.npy', allow_pickle=True)
 POPULATION, NEIGHBOURS, ARENA_RADIUS, TIMESTEPS, DIMENSIONS, REPETITIONS, ral = (polarisation_data[0][1][0], polarisation_data[0][1][1],
                                                                              polarisation_data[0][1][2], polarisation_data[0][1][3], 
                                                                              polarisation_data[0][1][4], polarisation_data[0][1][5],
                                                                              polarisation_data[0][1][6])
 
-print(int(TIMESTEPS))
 time_steps = np.linspace(0, int(TIMESTEPS), int(TIMESTEPS))
 for r in range(int(REPETITIONS)):
     fig, ax = plt.subplots(figsize=(4,3))
@@ -62,7 +61,7 @@ if animation_on:
                                 np.array([pos[2] for pos in position_data[n][0]]), 
                             zdir='x', s=10, c='gray', alpha=0.4)
     
-        for t in range(TIMESTEPS):
+        for t in range(int(TIMESTEPS)):
             scatter3D._offsets3d = (np.array([pos[0] for pos in position_data[n][t]]),
                                     np.array([pos[1] for pos in position_data[n][t]]), 
                                     np.array([pos[2] for pos in position_data[n][t]]))
@@ -81,5 +80,5 @@ if animation_on:
             
             plt.pause(0.001)
         plt.close()
-        time.sleep(5)
+        time.sleep(2)
     

@@ -1,5 +1,3 @@
-from matplotlib import pyplot as plt
-import random
 import numpy as np
 from parent_class import Parent
 from parent_class import Parent
@@ -10,12 +8,12 @@ import time
 
 '''This script contains the main sinmulation loop, saving data for later plotting and analysis.'''
 
-POPULATION = 300
-NEIGHBOURS = 200    #number of neighbours each agent is influenced by
-ARENA_RADIUS = 150
-TIMESTEPS = 10000
+POPULATION = 10
+NEIGHBOURS = 5    #number of neighbours each agent is influenced by
+ARENA_RADIUS = 10
+TIMESTEPS = 100
 DIMENSIONS = 3
-REPETITIONS = 5
+REPETITIONS = 1
 
 env = Environment(ARENA_RADIUS, DIMENSIONS)
 data_recorder = DataRecorder(POPULATION, DIMENSIONS, TIMESTEPS, REPETITIONS)
@@ -30,6 +28,10 @@ for n in range(REPETITIONS):
     print(f"Repetition {n+1}")
     #print(f"ral {pop.population_array[0].get_ral()}")
     #print(f"self.ral {pop.population_array[0].radius_of_alignment}")
+    
+    rr, ral, rat=pop.find_neighbours_in_zones() # N_rz, N_alz, N_atz
+    print(f"rr: {rr}, ral: {ral}, rat: {rat},")# N_rz: {N_rz}, N_alz: {N_alz}, N_atz: {N_atz}")
+    print(ral[1][0])
     
     for t in range(TIMESTEPS):
         pop.update_positions(env)
