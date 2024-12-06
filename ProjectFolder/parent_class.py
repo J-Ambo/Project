@@ -6,7 +6,8 @@ import numpy as np
                     nn = number of neighbours'''
 
 class Parent:
-    ral = 2.4  #radius of alignment
+    ral = 1.3  #radius of alignment
+    rat = 12.3
 
     def __init__(self, x, y, z, dimensions): 
         self.position = np.array([x, y, z])  
@@ -18,7 +19,7 @@ class Parent:
         self.previous_direction = self.direction
 
         self.body_length = 1
-        self.speed =  0.5 #np.clip(np.random.normal(loc=0.5, scale=0.1), 0.45, 0.55)     #np.random.choice(np.linspace(0.5, 1, 5))
+        self.speed =  1 #np.clip(np.random.normal(loc=0.5, scale=0.1), 0.45, 0.55)     #np.random.choice(np.linspace(0.5, 1, 5))
         self.perception_angle = np.deg2rad(270)
         self.minimum_turning_radius = 0.2 * self.body_length
         self.maximal_turning_angle = np.deg2rad(40)  #np.arcsin(self.speed / (2 * self.minimum_turning_radius))
@@ -28,7 +29,7 @@ class Parent:
 
         (self.radius_of_repulsion,
         self.radius_of_alignment, 
-        self.radius_of_attraction) = 2, self.__class__.ral, 15
+        self.radius_of_attraction) = 1, self.__class__.ral, self.__class__.rat
 
         (self.repulsion_vector, 
          self.alignment_vector, 
@@ -38,12 +39,11 @@ class Parent:
     @classmethod
     def increment_ral(cls, increment):
         cls.ral += increment
-    
-    @classmethod
-    def get_ral(cls):
-        return cls.ral
-    
 
+    @classmethod
+    def increment_rat(self, increment):
+        self.rat += increment
+    
     
 
         
