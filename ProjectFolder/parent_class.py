@@ -6,8 +6,12 @@ import numpy as np
                     nn = number of neighbours'''
 
 class Parent:
-    ral = 1.3  #radius of alignment
-    rat = 12.3
+    rr = 1.0  #radius of repulsion
+    ral = 2  #radius of alignment
+    rat = 16
+    speed = 3
+    perception_angle = np.deg2rad(270)
+    maximal_turning_angle = np.deg2rad(40) * 0.1    #0.1s is the time step
 
     def __init__(self, x, y, z, dimensions): 
         self.position = np.array([x, y, z])  
@@ -16,20 +20,19 @@ class Parent:
         self.direction = np.random.rand(dimensions)
         self.direction = np.random.rand(dimensions)
         self.direction /= np.linalg.norm(self.direction)
-        self.previous_direction = self.direction
 
         self.body_length = 1
-        self.speed =  1 #np.clip(np.random.normal(loc=0.5, scale=0.1), 0.45, 0.55)     #np.random.choice(np.linspace(0.5, 1, 5))
-        self.perception_angle = np.deg2rad(270)
+        self.speed =  self.__class__.speed  #np.clip(np.random.normal(loc=0.5, scale=0.1), 0.45, 0.55)     #np.random.choice(np.linspace(0.5, 1, 5))
+        self.perception_angle = self.__class__.perception_angle
         self.minimum_turning_radius = 0.2 * self.body_length
-        self.maximal_turning_angle = np.deg2rad(40)  #np.arcsin(self.speed / (2 * self.minimum_turning_radius))
+        self.maximal_turning_angle = self.__class__.maximal_turning_angle #np.arcsin(self.speed / (2 * self.minimum_turning_radius))
 
         self.maximal_rotation_matrix = np.array([[np.cos(self.maximal_turning_angle), -np.sin(self.maximal_turning_angle)],
                                                [np.sin(self.maximal_turning_angle), np.cos(self.maximal_turning_angle)]])
 
         (self.radius_of_repulsion,
         self.radius_of_alignment, 
-        self.radius_of_attraction) = 1, self.__class__.ral, self.__class__.rat
+        self.radius_of_attraction) = self.__class__.rr, self.__class__.ral, self.__class__.rat
 
         (self.repulsion_vector, 
          self.alignment_vector, 
@@ -41,8 +44,9 @@ class Parent:
         cls.ral += increment
 
     @classmethod
-    def increment_rat(self, increment):
-        self.rat += increment
+    def increment_rat(cls, increment):
+        cls.rat += increment
+
     
     
 
