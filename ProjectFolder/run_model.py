@@ -10,12 +10,12 @@ from line_profiler import profile
 '''This script contains the main sinmulation loop, saving data for later plotting and analysis.'''
 
 population = 100
-neighbours = 50    #number of neighbours each agent is influenced by
-arena_radius = 100
+neighbours = 299   #number of neighbours each agent is influenced by
+arena_radius = 200
 timesteps = 200
 dimensions = 3
 repetitions = 1
-increments = 5
+increments = 1
 increment_size = 0.5
 
 save_data = True
@@ -34,8 +34,6 @@ def run_model():
             
             for t in range(timesteps):
                 pop.update_positions(env)
-                #print(pop.population_positions)
-                #print(pop.population_array[0].position)
                 data_recorder.update_data(pop, i, r, t)
 
         Parent.increment_rat(increment_size)  #increment the radius of attraction
@@ -50,8 +48,8 @@ end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time} seconds")
 
-finishing_ral = data_recorder.get_data()[1][-1][-1][1][-2]
-finishing_rat = data_recorder.get_data()[1][-1][-1][1][-1]
+finishing_ral = data_recorder.get_polarisation_data()[-1][-1][1][-2]
+finishing_rat = data_recorder.get_polarisation_data()[-1][-1][1][-1]
 
 ## Save data
 if save_data:
@@ -79,7 +77,7 @@ if save_data:
         maximum_turning_angle = np.rad2deg(Parent.maximal_turning_angle) 
         file.write(f'Maximal turning angle: {maximum_turning_angle}deg/timestep ({maximum_turning_angle/0.1}deg/s)\n')
 
-    np.save(f'{new_folder_path}/polarisation_data', data_recorder.get_data()[1])
-    np.save(f'{new_folder_path}/rotation_data', data_recorder.get_data()[2])
-    np.save(f'{new_folder_path}/position_data', data_recorder.get_data()[0][:,:,:,:,0])
+    np.save(f'{new_folder_path}/polarisation_data', data_recorder.get_polarisation_data())
+    np.save(f'{new_folder_path}/rotation_data', data_recorder.get_rotation_data())
+    np.save(f'{new_folder_path}/position_data', data_recorder.get_position_data())
 
