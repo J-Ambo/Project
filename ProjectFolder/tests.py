@@ -10,7 +10,7 @@ from sklearn.neighbors import KDTree
 
 test_prints = False
 env = Environment(10, 3)
-pop = Population(10, 5, env)
+pop = Population(10, env)
 indices_array = np.arange(10)
 select = np.array([1,2,5,7])
 
@@ -79,12 +79,12 @@ rz_Nei = rr_neighbours
 target_indices = rat_neighbours[0]
 all_distances = rat_neighbours[1]
 
-def remove_false_zeros(boolean, indices):
+'''def remove_false_zeros(boolean, indices):
     valid_indices = []
     for i, v in enumerate(indices):
         if not ((v == 0) and (not boolean[i])):
             valid_indices.append(v)
-    return np.array(valid_indices)
+    return np.array(valid_indices)'''
 
 def remove_self_index(index, indices):
     valid_indices = []
@@ -92,6 +92,25 @@ def remove_self_index(index, indices):
         if not i == index:
             valid_indices.append(i)
     return np.array(valid_indices)
+
+def remove_false_zeros(boolean, indices):
+        boolean = np.asarray(boolean)
+        indices = np.asarray(indices)
+        mask = ~((indices == 0) & (~boolean))
+        valid_indices = indices[mask]
+        return valid_indices
+    
+# Remove neighbours which are within the blind volume. 
+def remove_hidden_indices(index, indices, distances):
+    neighbour_positions = pop.population_positions[[c for c in indices]]
+    focus_position = pop.population_positions[index]
+    focus_direction = pop.population_directions[index]
+    directions_to_neighbours = (neighbour_positions - focus_position) / distances[:,np.newaxis]
+    dot_products = np.dot(directions_to_neighbours, focus_direction)
+    angles_to_neighbours = np.arccos(dot_products)
+    mask = angles_to_neighbours <= Parent.perception_angle / 2
+    valid_indices = indices[mask]
+    return valid_indices, mask
 
 all_vectors = np.empty((pop.population_size, 3))
 for index, distances in enumerate(all_distances):
@@ -101,11 +120,19 @@ for index, distances in enumerate(all_distances):
     print(selected_indices)
     selected_indices = remove_false_zeros(zone_condition, selected_indices)
     print(selected_indices)
-    selected_indices = remove_self_index(index, selected_indices)
-    print(selected_indices)
+    
+    #selected_indices = remove_self_index(index, selected_indices)
+    #print(selected_indices)
     selected_distances = np.where(zone_condition, distances, 0)
+    print(selected_distances)
     selected_distances = selected_distances[selected_distances != 0]
-    #print(selected_distances)
+    print(selected_distances)
+
+    selected_indices, mask = remove_hidden_indices(index, selected_indices, selected_distances)
+    print(selected_indices)
+
+    selected_distances = selected_distances[mask]
+    print(selected_distances)
     cjs = pop.population_positions[[c for c in selected_indices]]
     #print(cjs)
     pos = pop.population_positions[index]
@@ -120,3 +147,9 @@ for index, distances in enumerate(all_distances):
     all_vectors[index] = -normalised_sum 
 #print(all_vectors)
 
+import timeit
+x = timeit.Timer('v = np.arccos(a)', 'import numpy as np; a = np.array([0.6,0.5,0.1,-0.9,0.987])')
+print(x.timeit(100000))
+
+y = timeit.Timer('v = math.acos(a)', 'import math; import numpy as np; a = np.array([0.6,0.5,0.1,-0.9,0.987])')
+print(y.timeit(100000))
