@@ -8,6 +8,7 @@ from environment_class import Environment
 from line_profiler import profile
 
 class Population:
+    steering_error = 0.25
     def __init__(self, population_size, environment):
         self.population_size = population_size
         self.dimension = environment.dimension
@@ -38,7 +39,6 @@ class Population:
         distances, indices = tree.query(all_positions, k=self.n_neighbours+1)
         return distances, indices, tree'''
     
-    @profile
     def find_neighbours_in_zones(self):
         all_positions = self.population_positions
         tree = KDTree(all_positions)
@@ -67,8 +67,6 @@ class Population:
         directions_to_neighbours = (neighbour_positions - focus_position) / distances[:,np.newaxis]
         dot_products = np.dot(directions_to_neighbours, focus_direction)
         dot_products = np.round(dot_products, 3)
-        #print(f"Greater than one: {np.any(dot_products>1)}")
-        #print(f"Less than minus one: {np.any(dot_products<-1)}")
         angles_to_neighbours = np.arccos(dot_products)
         mask = angles_to_neighbours <= Parent.perception_angle / 2
         valid_indices = indices[mask]
@@ -154,6 +152,7 @@ class Population:
                 all_wall_vectors[index] = -position * np.exp(-distance_from_boundary)
         return all_wall_vectors
 
+    @profile
     def update_positions(self, environment):
         neighbours_distances = self.find_neighbours_in_zones()
         neighbours = neighbours_distances[0]
@@ -201,7 +200,7 @@ class Population:
         maximal_directions = np.einsum('ijk,ik->ij', rotation_matrices, self.population_directions)
 
         self.population_directions = np.where(mask[:, np.newaxis], target_directions, maximal_directions)
-        errors = np.random.normal(0, 0.25, (self.population_size, self.dimension))
+        errors = np.random.normal(0, __class__.steering_error, (self.population_size, self.dimension))
         self.population_directions += errors
 
         self.population_directions /= np.linalg.norm(self.population_directions, axis=1)[:, np.newaxis]

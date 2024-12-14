@@ -7,8 +7,8 @@ import numpy as np
 
 class Parent:
     rr = 1.0  #radius of repulsion
-    ral = 4  #radius of alignment
-    rat = 16
+    ral = 1  #radius of alignment
+    rat = 15
     speed = 3
     perception_angle = np.deg2rad(270)
     maximal_turning_angle = np.deg2rad(40) #* 0.1    #0.1s is the time step
@@ -46,8 +46,7 @@ class Parent:
     def increment_rat(cls, increment):
         cls.rat += increment
 
-    
-    
+
 
         
 

@@ -2,28 +2,29 @@ import numpy as np
 from line_profiler import profile
 
 class DataRecorder:
-    def __init__(self, population_size, dimensions, time, repetitions, increments):
-        #self.data = np.zeros((increments, repetitions, time, population_size, 2, dimensions))
-        self.position_data = np.zeros((increments, repetitions, time, population_size, dimensions))
-        self.polarisation_data = self._initialize_data(increments, repetitions, time)
-        self.rotation_data = self._initialize_data(increments, repetitions, time)
+    def __init__(self, population_size, dimensions, time, repetitions, increments, strips):
+        self.position_data = np.zeros((strips, increments, repetitions, time, population_size, dimensions))
+        self.polarisation_data = self.initialize_data(strips, increments, repetitions, time)
+        self.rotation_data = self.initialize_data(strips, increments, repetitions, time)
+        self.average_polarisations = np.zeros((strips, increments))
     
-    def _initialize_data(self, increments, repetitions, time):
-        return np.array([[[np.zeros(time), np.zeros(8)] for _ in range(repetitions)] for _ in range(increments)], dtype=object)
+    def initialize_data(self, strips, increments, repetitions, time):
+        return np.array([[[[np.zeros(time), np.zeros(8)] for _ in range(repetitions)] for _ in range(increments)] for _ in range(strips)], dtype=object)
 
-    def update_parameters(self, increment, repetition, parameters):
-        self.polarisation_data[increment][repetition][1] = parameters 
-        self.rotation_data[increment][repetition][1] = parameters
+    def update_parameters(self, strip, increment, repetition, parameters):
+        self.polarisation_data[strip][increment][repetition][1] = parameters 
+        self.rotation_data[strip][increment][repetition][1] = parameters
 
-    def update_data(self, population, increment, repetition, time):
-        self.all_agents = population.population_array
+    def update_data(self, population, strip, increment, repetition, time_step):
         self.population = population
-        #self.data[increment, repetition, time, :, 0, :] = self.population.population_positions           #np.array([agent.position for agent in self.all_agents])
-        #self.data[increment, repetition, time, :, 1, :] = self.population.population_directions          #np.array([agent.direction for agent in self.all_agents])
 
-        self.position_data[increment, repetition, time, :] = self.population.population_positions
-        self.polarisation_data[increment][repetition][0][time] = self.population.polarisation
-        self.rotation_data[increment][repetition][0][time] = self.population.rotation
+        self.position_data[strip, increment, repetition, time_step, :] = self.population.population_positions
+        self.polarisation_data[strip][increment][repetition][0][time_step] = self.population.polarisation
+        self.rotation_data[strip][increment][repetition][0][time_step] = self.population.rotation
+
+    def update_averages(self, strip, increment, samples):
+        polarisation_samples = [repetition[-samples:] for repetition in self.get_polarisation_data()[strip][increment][:,0]]
+        self.average_polarisations[strip][increment] = np.mean(polarisation_samples)
 
     def get_polarisation_data(self):
         return self.polarisation_data
@@ -34,11 +35,15 @@ class DataRecorder:
     def get_position_data(self):
         return self.position_data
     
-data = DataRecorder(5, 3, 6, 1, 2)
+    def get_polarisation_averages(self):
+        return self.average_polarisations
+    
+data = DataRecorder(5, 3, 10, 4, 2, 3)
 
-
-#print(data.get_data()[2])
-#print(data.get_data()[2][0])
-#print(data.get_data()[2][0,0])
-#print(data.get_data()[2][0,0,0])
-#print(data.get_data()[2][0,0,0][0])
+'''print(f"All: \n{data.get_polarisation_data()}")
+print(f"First strip: \n{data.get_polarisation_data()[0]}")
+print(f"First increment: \n{data.get_polarisation_data()[0][0]}")
+print(f"All repetitions in first increment: \n{data.get_polarisation_data()[0][0][:,0]}")
+L4 = [repetition[-4:] for repetition in data.get_polarisation_data()[0][0][:,0]]
+print(f"Last 4 elements in each repetition array: \n{L4}")
+print(f"Repetition averages: \n{np.mean(L4)}")'''
