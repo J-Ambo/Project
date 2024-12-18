@@ -9,7 +9,7 @@ import shutil
 plots_on = True
 save_plots = True
 
-data_path = r"C:\Users\44771\Desktop\Data\1512\1512_1647"
+data_path = r"C:\Users\44771\Desktop\Data\1712\1712_1734"
 data_file_name = os.path.split(data_path)[1]
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
@@ -22,8 +22,16 @@ Population_size, Arena_radius, Timesteps, Repetitions, Increments, Strips = (pol
 ral_array = [sub_array[-2] for sub_array in polarisation_data[0][:,0][:,1]]
 rat_array = [sub_array[-1] for sub_array in polarisation_data[0][:,0][:,1]]
 
+print(ral_array)
+print(rat_array)
+
 time_steps = np.linspace(0, int(Timesteps), int(Timesteps))
 if plots_on:
+    time_dm = time.strftime('%d%m')
+    new_folder_path = f'C:/Users/44771/Desktop/Plots/{time_dm}/{data_file_name}'
+    os.makedirs(new_folder_path, exist_ok=True)
+    shutil.copy(f'{data_path}/parameters.txt', new_folder_path)
+
     for n in range(int(Strips)):
         for i in range(int(Increments)):  #i.e. for i in range(number_of_increments)
             for r in range(int(Repetitions)):
@@ -33,17 +41,15 @@ if plots_on:
                 ax.plot(time_steps, rotation_data[n][i][r][0], label='Rotation', c='red')
                 ax.legend()
                 ral = np.round(ral_array[i],1)
-                rat = np.round(rat_array[i],1)
+                rat = np.round(rat_array[i],1) + n*0.5
                 ax.set_title(f'Rep:{r+1} Pop:{int(Population_size)} ral:{ral} rat:{rat}')
 
                 if save_plots:
-                    time_dm = time.strftime('%d%m')
-                    new_folder_path = f'C:/Users/44771/Desktop/Plots/{time_dm}/{data_file_name}'
-                    os.makedirs(new_folder_path, exist_ok=True)
-                    #shutil.copy(f'{data_path}/parameters.txt', new_folder_path)
-                    plt.savefig(f'{new_folder_path}/I{i+1}R{r+1}.png', dpi=300, bbox_inches='tight')
-
+                    os.makedirs(f'{new_folder_path}/Strip{n+1}', exist_ok=True)
+                    plt.savefig(f'{new_folder_path}/Strip{n+1}/I{i+1}R{r+1}.png', dpi=300, bbox_inches='tight')
+                    
                 plt.close()
 
-    if save_plots:
-        shutil.copy(f'{data_path}/parameters.txt', new_folder_path)
+                    
+    #if save_plots:
+       # shutil.copy(f'{data_path}/parameters.txt', new_folder_path)

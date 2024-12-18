@@ -11,16 +11,18 @@ from line_profiler import profile
 
 population = 100
 arena_radius = 200
-timesteps = 1000
-samples = 500
+timesteps = 3000
+samples = 1000
 dimensions = 3
 repetitions = 10
-increments = 30
-strips = 30
+increments = 11
+strips = 11
 increment_size = 0.5
 steering_error = Population.steering_error
-Parent.ral = 1
-Parent.rat = 1
+starting_ral = 1
+starting_rat = 11
+Parent.ral = starting_ral
+Parent.rat = starting_rat
 
 save_data = True
 
@@ -30,6 +32,7 @@ data_recorder = DataRecorder(population, dimensions, timesteps, repetitions, inc
 
 def run_model():
     for n in range(strips):
+        print(f"Strip {n+1}, Ral is {Parent.ral}, Rat is {Parent.rat}")
         for i in range(increments):
             for r in range(repetitions):
                 parameter_array = np.array([population, arena_radius, timesteps, repetitions, increments, strips, Parent.ral, Parent.rat])
@@ -47,11 +50,10 @@ def run_model():
             Parent.increment_rat(increment_size)  #increment the radius of attraction
             Parent.increment_ral(increment_size)  #increment the radius of alignment
 
-        Parent.increment_rat(increment_size)
+        Parent.rat = starting_rat
+        Parent.increment_rat(-increment_size*(n+1))
         Parent.ral = 1
 
-starting_ral = Parent.ral
-starting_rat = Parent.rat
 
 start_time = time.time()
 run_model()
@@ -59,8 +61,8 @@ end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time} seconds")
 
-finishing_ral = data_recorder.get_polarisation_data()[-1][-1][-1][1][-2]
-finishing_rat = data_recorder.get_polarisation_data()[-1][-1][-1][1][-1]
+finishing_ral = np.round(data_recorder.get_polarisation_data()[-1][-1][-1][1][-2], 1)
+finishing_rat = np.round(data_recorder.get_polarisation_data()[-1][-1][-1][1][-1], 1)
 
 ## Save data
 if save_data:
@@ -73,14 +75,18 @@ if save_data:
         file.write(f'Population: {population}\n')
         file.write(f'Arena Radius: {arena_radius}\n')
         file.write(f'Timesteps: {timesteps}\n')
+        file.write(f'Samples: {samples}\n')
         file.write(f'Dimensions: {dimensions}\n')
         file.write(f'Repetitions: {repetitions}\n')
         file.write(f'Increments: {increments}\n')
+        file.write(f'Strips: {strips}\n')
         file.write('\n')
         file.write('The following are agent specific attributes:\n')
         file.write(f'Radius of repulsion: {Parent.rr}\n')
-        file.write(f'Radius of alignment range: {starting_ral}-{finishing_ral}\n')
-        file.write(f'Radius of attraction range: {starting_rat}-{finishing_rat}\n')
+        file.write(f'Range of radius of alignment: {starting_ral}-{finishing_ral}\n')
+        file.write(f'(Range of alignment zone widths: {starting_ral-Parent.rr}-{finishing_ral-Parent.rr})\n')
+        file.write(f'Range of radius of attraction: {starting_rat}-{finishing_rat}\n')
+        file.write(f'(Range of attraction zone widths: {starting_rat-starting_ral}-{finishing_rat-finishing_ral})\n')
         file.write(f'Speed: {Parent.speed}\n')
         file.write(f'Steering error: {steering_error}\n')
         perception_angle = np.rad2deg(Parent.perception_angle)
@@ -92,4 +98,5 @@ if save_data:
     np.save(f'{new_folder_path}/rotation_data', data_recorder.get_rotation_data())
     np.save(f'{new_folder_path}/position_data', data_recorder.get_position_data())
     np.save(f'{new_folder_path}/polarisation_averages', data_recorder.get_polarisation_averages())
+    np.save(f'{new_folder_path}/rotation_averages', data_recorder.get_rotation_averages())
 
