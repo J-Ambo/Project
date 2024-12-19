@@ -9,7 +9,7 @@ import shutil
 plots_on = True
 save_plots = True
 
-data_path = r"C:\Users\44771\Desktop\Data\1712\1712_1734"
+data_path = r"C:\Users\44771\Desktop\Data\1912\1912_1401"
 data_file_name = os.path.split(data_path)[1]
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
@@ -20,7 +20,9 @@ Population_size, Arena_radius, Timesteps, Repetitions, Increments, Strips = (pol
                                                                 polarisation_data[0][0][0][1][4], polarisation_data[0][0][0][1][5])
 
 ral_array = [sub_array[-2] for sub_array in polarisation_data[0][:,0][:,1]]
-rat_array = [sub_array[-1] for sub_array in polarisation_data[0][:,0][:,1]]
+rat_array = [sub_array[-1] for sub_array in polarisation_data[0][:,0][:,1]] #polarisation_data[:,0][:,1][:,-1]]
+#print(polarisation_data[0][:,0][:,1])
+#print(polarisation_data[:,0][:,1][:,-2])
 
 print(ral_array)
 print(rat_array)
@@ -41,7 +43,7 @@ if plots_on:
                 ax.plot(time_steps, rotation_data[n][i][r][0], label='Rotation', c='red')
                 ax.legend()
                 ral = np.round(ral_array[i],1)
-                rat = np.round(rat_array[i],1) + n*0.5
+                rat = np.round(rat_array[i],1) + n*0.5  
                 ax.set_title(f'Rep:{r+1} Pop:{int(Population_size)} ral:{ral} rat:{rat}')
 
                 if save_plots:

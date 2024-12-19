@@ -8,7 +8,7 @@ from environment_class import Environment
 from line_profiler import profile
 
 class Population:
-    steering_error = 0.25
+    steering_error = 0.2
     def __init__(self, population_size, environment):
         self.population_size = population_size
         self.dimension = environment.dimension

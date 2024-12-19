@@ -16,7 +16,7 @@ samples = 1000
 dimensions = 3
 repetitions = 10
 increments = 11
-strips = 11
+strips = 1
 increment_size = 0.5
 steering_error = Population.steering_error
 starting_ral = 1
@@ -60,9 +60,12 @@ run_model()
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time} seconds")
+#print(data_recorder.get_polarisation_data())
 
 finishing_ral = np.round(data_recorder.get_polarisation_data()[-1][-1][-1][1][-2], 1)
 finishing_rat = np.round(data_recorder.get_polarisation_data()[-1][-1][-1][1][-1], 1)
+#print(finishing_ral)
+#print(finishing_rat)
 
 ## Save data
 if save_data:
