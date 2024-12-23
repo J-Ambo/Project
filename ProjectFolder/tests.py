@@ -65,6 +65,11 @@ targets_positions = np.isin(indices_array, target_indices.reshape(len(target_ind
 
 all_positions = pop.population_positions
 tree = KDTree(all_positions)
+Neighbours = tree.query(all_positions, k=pop.population_size)
+distances = np.asarray(Neighbours[0])
+neighbours = np.asarray(Neighbours[1])
+print(f"distances: \n{distances}")
+print(f"neighbours: \n{neighbours}")
 rat_neighbours = tree.query_radius(all_positions, Parent.rat, return_distance=True)
 ral_neighbours = tree.query_radius(all_positions, Parent.ral)
 rr_neighbours = tree.query_radius(all_positions, Parent.rr)
@@ -102,7 +107,8 @@ def remove_false_zeros(boolean, indices):
     
 # Remove neighbours which are within the blind volume. 
 def remove_hidden_indices(index, indices, distances):
-    neighbour_positions = pop.population_positions[[c for c in indices]]
+    neighbour_positions = pop.population_positions[indices]
+    #print(f"neighbour pos:\n{neighbour_positions}")
     focus_position = pop.population_positions[index]
     focus_direction = pop.population_directions[index]
     directions_to_neighbours = (neighbour_positions - focus_position) / distances[:,np.newaxis]
@@ -113,28 +119,31 @@ def remove_hidden_indices(index, indices, distances):
     return valid_indices, mask
 
 all_vectors = np.empty((pop.population_size, 3))
+#print(f"All conditions: {[(distances > Parent.ral) & (distances < Parent.rat) for distances in all_distances]}")
 for index, distances in enumerate(all_distances):
     zone_condition = (distances > Parent.ral) & (distances < Parent.rat)
     print(zone_condition)
-    selected_indices = np.where(zone_condition, target_indices[index], 0)
+    selected_indices = target_indices[index][zone_condition]
     print(selected_indices)
-    selected_indices = remove_false_zeros(zone_condition, selected_indices)
-    print(selected_indices)
+    #selected_indices = np.where(zone_condition, target_indices[index], 0)
+    #print(selected_indices)
+    #selected_indices = remove_false_zeros(zone_condition, selected_indices)
+   # print(selected_indices)
     
     #selected_indices = remove_self_index(index, selected_indices)
     #print(selected_indices)
-    selected_distances = np.where(zone_condition, distances, 0)
+    selected_distances = distances[zone_condition]#np.where(zone_condition, distances, 0)
     print(selected_distances)
-    selected_distances = selected_distances[selected_distances != 0]
-    print(selected_distances)
+    #selected_distances = selected_distances[selected_distances != 0]
+   # print(selected_distances)
 
     selected_indices, mask = remove_hidden_indices(index, selected_indices, selected_distances)
     print(selected_indices)
 
     selected_distances = selected_distances[mask]
     print(selected_distances)
-    cjs = pop.population_positions[[c for c in selected_indices]]
-    #print(cjs)
+    cjs = pop.population_positions[selected_indices]
+    print(cjs)
     pos = pop.population_positions[index]
     #print(pos)
     cj_minus_ci = cjs - pos
@@ -146,10 +155,33 @@ for index, distances in enumerate(all_distances):
     #print(normalised_sum)
     all_vectors[index] = -normalised_sum 
 #print(all_vectors)
+#print(pop.population_positions[:, np.newaxis, :])
 
-import timeit
-x = timeit.Timer('v = np.arccos(a)', 'import numpy as np; a = np.array([0.6,0.5,0.1,-0.9,0.987])')
-print(x.timeit(100000))
+'''zone_condition = (distances > Parent.ral) & (distances < Parent.rat)
+print(zone_condition)
 
-y = timeit.Timer('v = math.acos(a)', 'import math; import numpy as np; a = np.array([0.6,0.5,0.1,-0.9,0.987])')
-print(y.timeit(100000))
+selected_indices = neighbours[zone_condition]#np.where(zone_condition, neighbours, 0)
+print(selected_indices)
+
+selected_distances = np.where(zone_condition, distances, 0)
+print(selected_distances)
+
+#selected_indices = np.apply_along_axis(remove_false_zeros, 1, zone_condition, selected_indices)
+#selected_distances = np.apply_along_axis(lambda x: x[x != 0], 1, selected_distances)
+
+def remove_hidden(index):
+    return remove_hidden_indices(index, selected_indices[index], selected_distances[index])
+
+hidden_results = np.array([remove_hidden(index) for index in range(pop.population_size)])
+selected_indices = np.array([result[0] for result in hidden_results])
+masks = np.array([result[1] for result in hidden_results])
+selected_distances = np.array([selected_distances[index][masks[index]] for index in range(pop.population_size)])
+
+cjs = np.array([pop.population_positions[indices] for indices in selected_indices])
+pos = pop.population_positions[:, np.newaxis, :]
+cj_minus_ci = cjs - pos
+normalised = cj_minus_ci / selected_distances[:, :, np.newaxis]
+sum_of_normalised = np.sum(normalised, axis=1)
+
+all_repulsion_vectors = -sum_of_normalised
+print(all_repulsion_vectors)'''

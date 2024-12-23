@@ -7,9 +7,9 @@ import shutil
    Also provides an alternative method to matplotlib.animation.FuncAnimation for creating
    an animation of the simulation. It uses plt.pause between each iteration to update the plot.
 '''
-animation_on = False
+animation_on = True
 
-data_path = r"C:\Users\44771\Desktop\Data\1512\1512_1133"
+data_path = r"C:\Users\44771\Desktop\Data\2212\2212_1308"
 data_file_name = os.path.split(data_path)[1]
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
@@ -20,9 +20,9 @@ Population_size, Arena_radius, Timesteps, Repetitions, Increments, Strips = (pol
                                                                 polarisation_data[0][0][0][1][4], polarisation_data[0][0][0][1][5])
 
 # Pick which (s)trip, (i)ncrement, (r)epetition to animate
-s = 0
-i = 0
-r = 0
+s = 4
+i = 4
+r = 7
 
 # Animation
 if animation_on:

@@ -11,23 +11,50 @@ from line_profiler import profile
 
 population = 100
 arena_radius = 200
-timesteps = 3000
-samples = 1000
+timesteps = 1000
+samples = 10
 dimensions = 3
-repetitions = 10
-increments = 11
+repetitions = 1
+increments = 1
 strips = 1
 increment_size = 0.5
 steering_error = Population.steering_error
-starting_ral = 1
-starting_rat = 11
+starting_ral = 7
+starting_rat = 9
 Parent.ral = starting_ral
 Parent.rat = starting_rat
 
-save_data = True
+save_data = False
 
 env = Environment(arena_radius, dimensions)
 data_recorder = DataRecorder(population, dimensions, timesteps, repetitions, increments, strips)
+
+
+
+'''def run_model():
+    for n in range(strips):
+        print(f"Strip {n+1}, Ral is {Parent.ral}, Rat is {Parent.rat}")
+        for i in range(increments):
+            parameter_array = np.array([population, arena_radius, timesteps, repetitions, increments, strips, Parent.ral, Parent.rat])
+            data_recorder.update_parameters(n, i, 0, parameter_array)
+            print(f"Strip: {n+1}")
+            print(f"Increment {i+1}")
+
+            # Initialize populations for all repetitions
+            populations = [Population(population, env) for _ in range(repetitions)]
+
+            for t in range(timesteps):
+                for r, pop in enumerate(populations):
+                    pop.update_positions(env)
+                    data_recorder.update_data(pop, n, i, r, t)
+
+            data_recorder.update_averages(n, i, samples)
+            Parent.increment_rat(increment_size)  # increment the radius of attraction
+            Parent.increment_ral(increment_size)  # increment the radius of alignment
+
+        Parent.rat = starting_rat
+        Parent.increment_rat(increment_size * (n + 1))
+        Parent.ral = starting_ral'''
 
 
 def run_model():
@@ -44,6 +71,7 @@ def run_model():
                 
                 for t in range(timesteps):
                     pop.update_positions(env)
+                    pop.calculate_order_parameters()
                     data_recorder.update_data(pop, n, i, r, t)
 
             data_recorder.update_averages(n, i, samples)
@@ -51,8 +79,8 @@ def run_model():
             Parent.increment_ral(increment_size)  #increment the radius of alignment
 
         Parent.rat = starting_rat
-        Parent.increment_rat(-increment_size*(n+1))
-        Parent.ral = 1
+        Parent.increment_rat(increment_size*(n+1))
+        Parent.ral = starting_ral
 
 
 start_time = time.time()

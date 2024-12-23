@@ -8,7 +8,7 @@ from environment_class import Environment
 from line_profiler import profile
 
 class Population:
-    steering_error = 0.2
+    steering_error = 0.25
     def __init__(self, population_size, environment):
         self.population_size = population_size
         self.dimension = environment.dimension
@@ -39,17 +39,18 @@ class Population:
         distances, indices = tree.query(all_positions, k=self.n_neighbours+1)
         return distances, indices, tree'''
     
-    def find_neighbours_in_zones(self):
-        all_positions = self.population_positions
-        tree = KDTree(all_positions)
-        rat_neighbours = tree.query_radius(all_positions, Parent.rat, return_distance=True)
+    def get_tree(self):
+        tree = KDTree(self.population_positions)
+        return tree
+    
+    def find_neighbours_in_zones(self, tree):
+        rat_neighbours = tree.query_radius(self.population_positions, Parent.rat, return_distance=True)
         return rat_neighbours
     
-    '''
-    def get_density(self):
-        tree = KDTree(self.population_positions)
-        density = tree.kernel_density(self.population_positions, h=1.5)
-        return density'''
+    def get_density(self, tree):
+        density = tree.kernel_density(self.population_positions, h=0.0001)
+        #print(self.population_positions[0])
+        return density
     
     # Remove indices=0 if their corresponding boolean value is False, otherwise(if True) keep. 
     def remove_false_zeros(self, boolean, indices):
@@ -61,7 +62,7 @@ class Population:
     
     # Remove neighbours which are within the blind volume. 
     def remove_hidden_indices(self, index, indices, distances):
-        neighbour_positions = self.population_positions[[c for c in indices]]
+        neighbour_positions = self.population_positions[indices]
         focus_position = self.population_positions[index]
         focus_direction = self.population_directions[index]
         directions_to_neighbours = (neighbour_positions - focus_position) / distances[:,np.newaxis]
@@ -73,20 +74,17 @@ class Population:
         return valid_indices, mask
 
     def calculate_repulsion_vectors(self, neighbours, distances):
-        all_repulsion_vectors = np.empty((self.population_size, 3))
+        all_repulsion_vectors = np.zeros((self.population_size, 3))
         for index, distances in enumerate(distances):
             zone_condition = (distances > 0) & (distances < Parent.rr)
 
-            selected_indices = np.where(zone_condition, neighbours[index], 0)
-            selected_distances = np.where(zone_condition, distances, 0)
-
-            selected_indices = self.remove_false_zeros(zone_condition, selected_indices)
-            selected_distances = selected_distances[selected_distances != 0]
+            selected_indices = neighbours[index][zone_condition]
+            selected_distances = distances[zone_condition]
 
             selected_indices, mask = self.remove_hidden_indices(index, selected_indices, selected_distances)
             selected_distances = selected_distances[mask]
             
-            cjs = self.population_positions[[c for c in selected_indices]]
+            cjs = self.population_positions[selected_indices]
             pos = self.population_positions[index]
             cj_minus_ci = cjs - pos
             normalised = cj_minus_ci/selected_distances[:,np.newaxis]
@@ -101,15 +99,12 @@ class Population:
         for index, distances in enumerate(distances):
             zone_condition = (distances > Parent.rr) & (distances < Parent.ral)
 
-            selected_indices = np.where(zone_condition, neighbours[index], 0)
-            selected_distances = np.where(zone_condition, distances, 0)
-
-            selected_indices = self.remove_false_zeros(zone_condition, selected_indices)
-            selected_distances = selected_distances[selected_distances != 0]
+            selected_indices = neighbours[index][zone_condition]
+            selected_distances = distances[zone_condition]
 
             selected_indices, mask = self.remove_hidden_indices(index, selected_indices, selected_distances)
 
-            vjs = self.population_directions[[v for v in selected_indices]]
+            vjs = self.population_directions[selected_indices]
             sum_of_normalised = np.sum(vjs, axis=0)
             alignment_vector = sum_of_normalised
             all_alignment_vectors[index] = alignment_vector
@@ -120,16 +115,13 @@ class Population:
         for index, distances in enumerate(distances):
             zone_condition = (distances > Parent.ral) & (distances < Parent.rat)
 
-            selected_indices = np.where(zone_condition, neighbours[index], 0)
-            selected_distances = np.where(zone_condition, distances, 0)
-
-            selected_indices = self.remove_false_zeros(zone_condition, selected_indices)
-            selected_distances = selected_distances[selected_distances != 0]
+            selected_indices = neighbours[index][zone_condition]
+            selected_distances = distances[zone_condition]
 
             selected_indices, mask = self.remove_hidden_indices(index, selected_indices, selected_distances)
             selected_distances = selected_distances[mask]
 
-            cjs = self.population_positions[[c for c in selected_indices]]
+            cjs = self.population_positions[selected_indices]
             pos = self.population_positions[index]
             cj_minus_ci = cjs - pos
             normalised = cj_minus_ci/selected_distances[:,np.newaxis]
@@ -154,7 +146,8 @@ class Population:
 
     @profile
     def update_positions(self, environment):
-        neighbours_distances = self.find_neighbours_in_zones()
+        tree = self.get_tree()
+        neighbours_distances = self.find_neighbours_in_zones(tree)
         neighbours = neighbours_distances[0]
         distances = neighbours_distances[1]
        
@@ -163,11 +156,6 @@ class Population:
         attraction_vectors = self.calculate_attraction_vectors(neighbours, distances)
         boundary_vectors = self.calculate_wall_vectors(environment)
         sum_of_vectors = np.sum((repulsion_vectors, alignment_vectors, attraction_vectors, boundary_vectors), axis=0)
-       
-        # Calculate average position to each agent
-        average_position = np.mean(self.population_positions, axis=0)
-        average_position_to_agents = self.population_positions - average_position
-        average_position_to_agents /= np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis]
         
         # Determine target directions
         target_directions = np.where(np.all(sum_of_vectors == 0, axis=1)[:, np.newaxis], self.population_directions, sum_of_vectors)
@@ -210,15 +198,25 @@ class Population:
         self.population_positions += self.population_speeds[:, np.newaxis] * self.population_directions
         self.population_positions = np.round(self.population_positions, 4)
 
-        # Calculate order parameters
-        sum_of_directions = np.sum(self.population_directions, axis=0)
-        self.polarisation = np.linalg.norm(sum_of_directions) / self.population_size
+        density = self.get_density(tree)
+        #print("Density after position update:", density)
 
-        angular_momenta = np.cross(average_position_to_agents, self.population_directions)
-        self.population_angular_momenta = angular_momenta
-        sum_of_angular_momenta = np.sum(self.population_angular_momenta, axis=0)
-        self.rotation = np.linalg.norm(sum_of_angular_momenta) / self.population_size
-        
+    def calculate_order_parameters(self):
+            # Calculate average position to each agent
+            average_position = np.mean(self.population_positions, axis=0)
+            st_dev = np.std(self.population_positions, axis=0)
+            print(st_dev)
+            average_position_to_agents = self.population_positions - average_position
+            average_position_to_agents /= np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis]
+            
+            # Calculate order parameters
+            sum_of_directions = np.sum(self.population_directions, axis=0)
+            self.polarisation = np.linalg.norm(sum_of_directions) / self.population_size
+
+            angular_momenta = np.cross(average_position_to_agents, self.population_directions)
+            self.population_angular_momenta = angular_momenta
+            sum_of_angular_momenta = np.sum(self.population_angular_momenta, axis=0)
+            self.rotation = np.linalg.norm(sum_of_angular_momenta) / self.population_size
 
 
 

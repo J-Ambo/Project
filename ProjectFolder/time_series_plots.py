@@ -9,7 +9,7 @@ import shutil
 plots_on = True
 save_plots = True
 
-data_path = r"C:\Users\44771\Desktop\Data\1912\1912_1401"
+data_path = r"C:\Users\44771\Desktop\Data\2312\2312_1244"
 data_file_name = os.path.split(data_path)[1]
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
