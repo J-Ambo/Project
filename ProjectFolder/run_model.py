@@ -11,7 +11,7 @@ from line_profiler import profile
 
 population = 100
 arena_radius = 200
-timesteps = 1000
+timesteps = 500
 samples = 10
 dimensions = 3
 repetitions = 1
@@ -19,12 +19,12 @@ increments = 1
 strips = 1
 increment_size = 0.5
 steering_error = Population.steering_error
-starting_ral = 7
+starting_ral = 6
 starting_rat = 9
 Parent.ral = starting_ral
 Parent.rat = starting_rat
 
-save_data = False
+save_data = True
 
 env = Environment(arena_radius, dimensions)
 data_recorder = DataRecorder(population, dimensions, timesteps, repetitions, increments, strips)
@@ -70,8 +70,9 @@ def run_model():
                 print(f"Repetition {r+1}")
                 
                 for t in range(timesteps):
-                    pop.update_positions(env)
-                    pop.calculate_order_parameters()
+                    tree = pop.get_tree()
+                    pop.update_positions(env, tree)
+                    pop.calculate_order_parameters(tree)
                     data_recorder.update_data(pop, n, i, r, t)
 
             data_recorder.update_averages(n, i, samples)

@@ -33,11 +33,10 @@ class Population:
         self.polarisation = 0   # Polarisation order parameter
         self.rotation = 0    # Rotation order parameter
 
-    '''def find_neighbours(self):
-        all_positions = self.population_positions
-        tree = KDTree(all_positions)
-        distances, indices = tree.query(all_positions, k=self.n_neighbours+1)
-        return distances, indices, tree'''
+    def find_neighbours(self, tree, query_point):
+        query_point = query_point.reshape(1,-1)
+        distances, indices = tree.query(query_point, k=self.population_size)
+        return distances, indices
     
     def get_tree(self):
         tree = KDTree(self.population_positions)
@@ -145,12 +144,11 @@ class Population:
         return all_wall_vectors
 
     @profile
-    def update_positions(self, environment):
-        tree = self.get_tree()
+    def update_positions(self, environment, tree):
         neighbours_distances = self.find_neighbours_in_zones(tree)
         neighbours = neighbours_distances[0]
         distances = neighbours_distances[1]
-       
+
         repulsion_vectors = self.calculate_repulsion_vectors(neighbours, distances)
         alignment_vectors = self.caculate_alignment_vectors(neighbours, distances)
         attraction_vectors = self.calculate_attraction_vectors(neighbours, distances)
@@ -198,25 +196,42 @@ class Population:
         self.population_positions += self.population_speeds[:, np.newaxis] * self.population_directions
         self.population_positions = np.round(self.population_positions, 4)
 
-        density = self.get_density(tree)
-        #print("Density after position update:", density)
-
-    def calculate_order_parameters(self):
+    def calculate_order_parameters(self, tree):
             # Calculate average position to each agent
             average_position = np.mean(self.population_positions, axis=0)
-            st_dev = np.std(self.population_positions, axis=0)
-            print(st_dev)
-            average_position_to_agents = self.population_positions - average_position
+            distances_indices = self.find_neighbours(tree, average_position)
+            print("average_position", average_position)
+            neighbours = distances_indices[1]
+            #print("Neighbours", neighbours)
+            #print(self.population_array)
+            distances = distances_indices[0]
+            #print("neighbours",neighbours)
+            #print("distance",distances)
+            st_dev = np.std(distances)
+            #print(st_dev)
+            mask = distances < 3*st_dev
+            #print("Mask", mask)
+            #print("Exluding outliers", neighbours[mask])
+            #print(self.population_array[neighbours[mask]],  end='\n\n')
+            #print(len(distances[mask]))
+            print(len(distances[~mask]))
+
+            agent_positions_in_school = self.population_positions[neighbours[mask]]
+            school_size = len(neighbours[mask])
+            average_school_position = np.mean(agent_positions_in_school, axis=0)
+            print("average_school_position", average_school_position)
+            average_position_to_agents = agent_positions_in_school - average_school_position
             average_position_to_agents /= np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis]
             
             # Calculate order parameters
-            sum_of_directions = np.sum(self.population_directions, axis=0)
-            self.polarisation = np.linalg.norm(sum_of_directions) / self.population_size
+            agent_directions_in_school = self.population_directions[neighbours[mask]]
+            sum_of_directions = np.sum(agent_directions_in_school, axis=0)
+            self.polarisation = np.linalg.norm(sum_of_directions) / school_size
 
-            angular_momenta = np.cross(average_position_to_agents, self.population_directions)
+            angular_momenta = np.cross(average_position_to_agents, agent_directions_in_school)
             self.population_angular_momenta = angular_momenta
             sum_of_angular_momenta = np.sum(self.population_angular_momenta, axis=0)
-            self.rotation = np.linalg.norm(sum_of_angular_momenta) / self.population_size
+            self.rotation = np.linalg.norm(sum_of_angular_momenta) / school_size
 
 
 
