@@ -1,6 +1,6 @@
 import numpy as np 
 import random
-from sklearn.neighbors import KDTree
+from sklearn.neighbors import KDTree, LocalOutlierFactor
 from parent_class import Parent
 from prey_class import Prey
 from environment_class import Environment
@@ -8,7 +8,7 @@ from environment_class import Environment
 from line_profiler import profile
 
 class Population:
-    steering_error = 0.25
+    steering_error = 0.15
     def __init__(self, population_size, environment):
         self.population_size = population_size
         self.dimension = environment.dimension
@@ -50,14 +50,6 @@ class Population:
         density = tree.kernel_density(self.population_positions, h=0.0001)
         #print(self.population_positions[0])
         return density
-    
-    # Remove indices=0 if their corresponding boolean value is False, otherwise(if True) keep. 
-    def remove_false_zeros(self, boolean, indices):
-        boolean = np.asarray(boolean)
-        indices = np.asarray(indices)
-        mask = ~((indices == 0) & (~boolean))
-        valid_indices = indices[mask]
-        return valid_indices
     
     # Remove neighbours which are within the blind volume. 
     def remove_hidden_indices(self, index, indices, distances):
@@ -196,35 +188,44 @@ class Population:
         self.population_positions += self.population_speeds[:, np.newaxis] * self.population_directions
         self.population_positions = np.round(self.population_positions, 4)
 
+    def remove_outliers(self, points, threshold=2):
+        mean = np.mean(points, axis=0)
+        std_dev = np.std(points, axis=0)
+        z_scores = np.abs((points - mean) / std_dev)
+        mask = np.all(z_scores < threshold, axis=1)
+        return mask
+
     def calculate_order_parameters(self, tree):
             # Calculate average position to each agent
             average_position = np.mean(self.population_positions, axis=0)
             distances_indices = self.find_neighbours(tree, average_position)
-            print("average_position", average_position)
+            #print("average_position", average_position)
             neighbours = distances_indices[1]
             #print("Neighbours", neighbours)
-            #print(self.population_array)
             distances = distances_indices[0]
             #print("neighbours",neighbours)
             #print("distance",distances)
-            st_dev = np.std(distances)
-            #print(st_dev)
-            mask = distances < 3*st_dev
+            mask = self.remove_outliers(self.population_positions)
+            reshaped_mask = mask.reshape((1,-1))
+            #print(reshaped_mask)
+            #mask = distances < var
             #print("Mask", mask)
-            #print("Exluding outliers", neighbours[mask])
-            #print(self.population_array[neighbours[mask]],  end='\n\n')
-            #print(len(distances[mask]))
-            print(len(distances[~mask]))
+            #print("Exluding outliers", neighbours[reshaped_mask])
+            #print(len(distances[reshaped_mask]))
+            print("Number of outliers:", len(distances[~reshaped_mask]))
 
-            agent_positions_in_school = self.population_positions[neighbours[mask]]
-            school_size = len(neighbours[mask])
+            agent_positions_in_school = self.population_positions[neighbours[reshaped_mask]]
+            #print(agent_positions_in_school)
+            school_size = len(neighbours[reshaped_mask])
+            #print(school_size)
             average_school_position = np.mean(agent_positions_in_school, axis=0)
-            print("average_school_position", average_school_position)
+            #print("average_school_position", average_school_position)
             average_position_to_agents = agent_positions_in_school - average_school_position
-            average_position_to_agents /= np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis]
+            epsilon = 1e-8
+            average_position_to_agents /= (np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis])
             
             # Calculate order parameters
-            agent_directions_in_school = self.population_directions[neighbours[mask]]
+            agent_directions_in_school = self.population_directions[neighbours[reshaped_mask]]
             sum_of_directions = np.sum(agent_directions_in_school, axis=0)
             self.polarisation = np.linalg.norm(sum_of_directions) / school_size
 
