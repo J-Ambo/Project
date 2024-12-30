@@ -32,24 +32,25 @@ class Population:
                  
         self.polarisation = 0   # Polarisation order parameter
         self.rotation = 0    # Rotation order parameter
-
-    def find_neighbours(self, tree, query_point):
-        query_point = query_point.reshape(1,-1)
-        distances, indices = tree.query(query_point, k=self.population_size)
-        return distances, indices
     
     def get_tree(self):
         tree = KDTree(self.population_positions)
         return tree
     
-    def find_neighbours_in_zones(self, tree):
+    def find_neighbours(self, tree):
         rat_neighbours = tree.query_radius(self.population_positions, Parent.rat, return_distance=True)
         return rat_neighbours
     
-    def get_density(self, tree):
-        density = tree.kernel_density(self.population_positions, h=0.0001)
-        #print(self.population_positions[0])
-        return density
+    def get_densities(self, tree, distances):
+        distances, indices = tree.query(self.population_positions, k=10)
+        densities = np.zeros(self.population_size)
+        for n in range(self.population_size):
+            nN = len(distances[n])-1
+            d = distances[n][-1]
+            density = nN/d
+            densities[n] = density
+        #print(densities)
+        return densities
     
     # Remove neighbours which are within the blind volume. 
     def remove_hidden_indices(self, index, indices, distances):
@@ -136,11 +137,8 @@ class Population:
         return all_wall_vectors
 
     @profile
-    def update_positions(self, environment, tree):
-        neighbours_distances = self.find_neighbours_in_zones(tree)
-        neighbours = neighbours_distances[0]
-        distances = neighbours_distances[1]
-
+    def update_positions(self, environment, neighbours, distances):
+        
         repulsion_vectors = self.calculate_repulsion_vectors(neighbours, distances)
         alignment_vectors = self.caculate_alignment_vectors(neighbours, distances)
         attraction_vectors = self.calculate_attraction_vectors(neighbours, distances)
@@ -188,48 +186,37 @@ class Population:
         self.population_positions += self.population_speeds[:, np.newaxis] * self.population_directions
         self.population_positions = np.round(self.population_positions, 4)
 
-    def remove_outliers(self, points, threshold=2):
-        mean = np.mean(points, axis=0)
-        std_dev = np.std(points, axis=0)
-        z_scores = np.abs((points - mean) / std_dev)
-        mask = np.all(z_scores < threshold, axis=1)
-        return mask
+    def remove_outliers(self, tree, distances):
+        densities = self.get_densities(tree, distances)
 
-    def calculate_order_parameters(self, tree):
+        n_classes = 100
+        density_bins = np.linspace(densities.min(), densities.max(), n_classes + 1)
+        class_labels = np.digitize(densities, density_bins)
+
+        # Outlier detection
+        outlier_threshold = 0.01
+        outlier_labels = class_labels <= np.percentile(class_labels, outlier_threshold * 100)
+
+        inlier_positions = self.population_positions[~outlier_labels]
+        inlier_directions = self.population_directions[~outlier_labels]
+
+        return inlier_positions, inlier_directions
+
+    def calculate_order_parameters(self, tree, distances):
             # Calculate average position to each agent
-            average_position = np.mean(self.population_positions, axis=0)
-            distances_indices = self.find_neighbours(tree, average_position)
-            #print("average_position", average_position)
-            neighbours = distances_indices[1]
-            #print("Neighbours", neighbours)
-            distances = distances_indices[0]
-            #print("neighbours",neighbours)
-            #print("distance",distances)
-            mask = self.remove_outliers(self.population_positions)
-            reshaped_mask = mask.reshape((1,-1))
-            #print(reshaped_mask)
-            #mask = distances < var
-            #print("Mask", mask)
-            #print("Exluding outliers", neighbours[reshaped_mask])
-            #print(len(distances[reshaped_mask]))
-            print("Number of outliers:", len(distances[~reshaped_mask]))
+            inlier_positions, inlier_directions = self.remove_outliers(tree, distances)
+            average_position = np.mean(inlier_positions, axis=0)
+            school_size = len(inlier_positions)
+            #print("N outliers:", self.population_size - school_size)
 
-            agent_positions_in_school = self.population_positions[neighbours[reshaped_mask]]
-            #print(agent_positions_in_school)
-            school_size = len(neighbours[reshaped_mask])
-            #print(school_size)
-            average_school_position = np.mean(agent_positions_in_school, axis=0)
-            #print("average_school_position", average_school_position)
-            average_position_to_agents = agent_positions_in_school - average_school_position
-            epsilon = 1e-8
+            average_position_to_agents = inlier_positions - average_position
             average_position_to_agents /= (np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis])
             
             # Calculate order parameters
-            agent_directions_in_school = self.population_directions[neighbours[reshaped_mask]]
-            sum_of_directions = np.sum(agent_directions_in_school, axis=0)
+            sum_of_directions = np.sum(inlier_directions, axis=0)
             self.polarisation = np.linalg.norm(sum_of_directions) / school_size
 
-            angular_momenta = np.cross(average_position_to_agents, agent_directions_in_school)
+            angular_momenta = np.cross(average_position_to_agents, inlier_directions)
             self.population_angular_momenta = angular_momenta
             sum_of_angular_momenta = np.sum(self.population_angular_momenta, axis=0)
             self.rotation = np.linalg.norm(sum_of_angular_momenta) / school_size

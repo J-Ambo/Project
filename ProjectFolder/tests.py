@@ -62,17 +62,34 @@ targets_positions = np.isin(indices_array, target_indices.reshape(len(target_ind
 #print(f"Targets: {targets_positions}")
 #print(np.tile(np.array([np.arange(10), np.arange(4)], dtype=object), (10,1)))
 
-
 all_positions = pop.population_positions
 tree = KDTree(all_positions)
-Neighbours = tree.query(all_positions, k=pop.population_size)
+Neighbours = tree.query(all_positions, k=9)
 distances = np.asarray(Neighbours[0])
 neighbours = np.asarray(Neighbours[1])
 print(f"distances: \n{distances}")
-print(f"neighbours: \n{neighbours}")
+#print(f"neighbours: \n{neighbours}")
 rat_neighbours = tree.query_radius(all_positions, Parent.rat, return_distance=True)
+print("rat neighbours \n", rat_neighbours)
+
+length_array = np.zeros(pop.population_size)
+distance_array = np.zeros(pop.population_size)
+for n in range(pop.population_size):
+     nN = len(rat_neighbours[0][n])-1
+     d = rat_neighbours[1][n][-1]
+     print(nN, d)
+     density = nN/d
+
+print(len(rat_neighbours[0])-1)
 ral_neighbours = tree.query_radius(all_positions, Parent.ral)
 rr_neighbours = tree.query_radius(all_positions, Parent.rr)
+
+densities = 1 / distances[:, -1]
+print(densities)
+#distances = rat_neighbours[1]
+self_mask = distances != 0
+#print(self_mask)
+#print("masked rat neighbours \n", rat_neighbours[0][self_mask])
 
 # Find the set difference between these arrays
 rz_Nei = rr_neighbours
@@ -157,10 +174,11 @@ for index, distances in enumerate(all_distances):
 #print(all_vectors)
 #print(pop.population_positions[:, np.newaxis, :])
 
-'''zone_condition = (distances > Parent.ral) & (distances < Parent.rat)
+'''zone_condition = (distances != 0) & (distances < Parent.rat)
 print(zone_condition)
 
-selected_indices = neighbours[zone_condition]#np.where(zone_condition, neighbours, 0)
+#selected_indices = neighbours[:,zone_condition]#np.where(zone_condition, neighbours, 0)
+selected_indices = [neighbours[i][zone_condition[i]] for i in range(len(neighbours))]
 print(selected_indices)
 
 selected_distances = np.where(zone_condition, distances, 0)
@@ -185,3 +203,65 @@ sum_of_normalised = np.sum(normalised, axis=1)
 
 all_repulsion_vectors = -sum_of_normalised
 print(all_repulsion_vectors)'''
+
+import numpy as np
+from sklearn.neighbors import NearestNeighbors
+import matplotlib.pyplot as plt
+
+# Generate sample 3D data
+np.random.seed(0)
+n_points = 100
+n_outliers = 10
+points = np.random.normal(0, 1, size=(n_points, 3))
+outliers = np.random.normal(5, 2, size=(n_outliers, 3))
+points = np.concatenate((points, outliers))
+
+# K-Nearest Neighbors (KNN) density estimation
+knn = NearestNeighbors(n_neighbors=10)
+knn.fit(points)
+distances, _ = knn.kneighbors(points)
+densities = 1 / distances[:, -1]
+#print("distances \n",distances)
+#print("distances[:,-1] \n", distances[:,-1])
+print(densities)
+
+# Equivalence classes
+n_classes = 5
+density_bins = np.linspace(densities.min(), densities.max(), n_classes + 1)
+class_labels = np.digitize(densities, density_bins)
+print(density_bins)
+print(class_labels)
+
+# Outlier detection
+outlier_threshold = 0.09
+outlier_labels = class_labels <= np.percentile(class_labels, outlier_threshold * 100)
+outliers = points[outlier_labels]
+print(outliers)
+
+# Visualize the results
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(points[~outlier_labels, 0], points[~outlier_labels, 1], points[~outlier_labels, 2], c='b', alpha=0.5)
+ax.scatter(points[outlier_labels, 0], points[outlier_labels, 1], points[outlier_labels, 2], c='r', alpha=0.5)
+plt.show()
+
+
+import os
+data_path = r"C:\Users\44771\Desktop\Data\2912\2912_1547"
+data_file_name = os.path.split(data_path)[1]
+
+polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
+rotation_data = np.load(f'{data_path}/rotation_data.npy', allow_pickle=True)
+
+samples=1000
+increments=31
+strips=31
+repetitions = 5
+rotation_errors = np.zeros((strips, increments))
+print(polarisation_data)
+for s in range(strips):
+    for i in range(increments):
+            rotation_samples = rotation_data[s][i][0]
+            print(rotation_data)
+           # rotation_samples = [repetition[-samples:] for repetition in self.get_rotation_data()[strip][increment][:,0]]
+#rotation_errors[strip][increment] = np.std(rotation_samples) / np.sqrt(samples)

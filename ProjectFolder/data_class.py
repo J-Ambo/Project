@@ -8,6 +8,8 @@ class DataRecorder:
         self.rotation_data = self.initialize_data(strips, increments, repetitions, time)
         self.average_polarisations = np.zeros((strips, increments))
         self.average_rotations = np.zeros((strips, increments))
+        self.polarisation_errors = np.zeros((strips, increments))
+        self.rotation_errors = np.zeros((strips, increments))
     
     def initialize_data(self, strips, increments, repetitions, time):
         return np.array([[[[np.zeros(time), np.zeros(8)] for _ in range(repetitions)] for _ in range(increments)] for _ in range(strips)], dtype=object)
@@ -22,12 +24,19 @@ class DataRecorder:
         self.polarisation_data[strip][increment][repetition][0][time_step] = self.population.polarisation
         self.rotation_data[strip][increment][repetition][0][time_step] = self.population.rotation
 
-    def update_averages(self, strip, increment, samples):
+    def calculate_averages(self, strip, increment, samples):
         polarisation_samples = [repetition[-samples:] for repetition in self.get_polarisation_data()[strip][increment][:,0]]
         self.average_polarisations[strip][increment] = np.mean(polarisation_samples)
 
         rotation_samples = [repetition[-samples:] for repetition in self.get_rotation_data()[strip][increment][:,0]]
         self.average_rotations[strip][increment] = np.mean(rotation_samples)
+
+    def calculate_errors(self, strip, increment, samples):
+        polarisation_samples = [repetition[-samples:] for repetition in self.get_polarisation_data()[strip][increment][:,0]]
+        self.polarisation_errors[strip][increment] = np.std(polarisation_samples) / np.sqrt(samples)
+
+        rotation_samples = [repetition[-samples:] for repetition in self.get_rotation_data()[strip][increment][:,0]]
+        self.rotation_errors[strip][increment] = np.std(rotation_samples) / np.sqrt(samples)
 
     def get_polarisation_data(self):
         return self.polarisation_data

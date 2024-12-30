@@ -11,16 +11,16 @@ from line_profiler import profile
 
 population = 100
 arena_radius = 200
-timesteps = 500
-samples = 10
+timesteps = 3000
+samples = 1000
 dimensions = 3
-repetitions = 1
-increments = 1
-strips = 1
+repetitions = 5
+increments = 31
+strips = 31
 increment_size = 0.5
 steering_error = Population.steering_error
-starting_ral = 6
-starting_rat = 9
+starting_ral = 1
+starting_rat = 1
 Parent.ral = starting_ral
 Parent.rat = starting_rat
 
@@ -28,8 +28,6 @@ save_data = True
 
 env = Environment(arena_radius, dimensions)
 data_recorder = DataRecorder(population, dimensions, timesteps, repetitions, increments, strips)
-
-
 
 '''def run_model():
     for n in range(strips):
@@ -71,11 +69,15 @@ def run_model():
                 
                 for t in range(timesteps):
                     tree = pop.get_tree()
-                    pop.update_positions(env, tree)
-                    pop.calculate_order_parameters(tree)
+                    neighbours_distances = pop.find_neighbours(tree)
+                    neighbours = neighbours_distances[0]
+                    distances = neighbours_distances[1]
+
+                    pop.update_positions(env, neighbours, distances)
+                    pop.calculate_order_parameters(tree, distances)
                     data_recorder.update_data(pop, n, i, r, t)
 
-            data_recorder.update_averages(n, i, samples)
+            data_recorder.calculate_averages(n, i, samples)
             Parent.increment_rat(increment_size)  #increment the radius of attraction
             Parent.increment_ral(increment_size)  #increment the radius of alignment
 
