@@ -53,7 +53,13 @@ class DataRecorder:
     def get_rotation_averages(self):
         return self.average_rotations
     
-data = DataRecorder(5, 3, 10, 4, 2, 3)
+    def get_rotation_errors(self):
+        return self.rotation_errors
+    
+    def get_polarisation_errors(self):
+        return self.polarisation_errors
+    
+#data = DataRecorder(5, 3, 10, 4, 2, 3)
 
 '''print(f"All: \n{data.get_polarisation_data()}")
 print(f"First strip: \n{data.get_polarisation_data()[0]}")

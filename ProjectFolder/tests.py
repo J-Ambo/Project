@@ -253,15 +253,29 @@ data_file_name = os.path.split(data_path)[1]
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
 rotation_data = np.load(f'{data_path}/rotation_data.npy', allow_pickle=True)
 
-samples=1000
+samples=10
 increments=31
 strips=31
 repetitions = 5
 rotation_errors = np.zeros((strips, increments))
-print(polarisation_data)
+polarisation_errors = np.zeros((strips, increments))
+
+
+print(rotation_data[0][0])
+print(rotation_data[0][0][:,0])
+rotation_sample = [repetition[-samples:] for repetition in rotation_data[0][0][:,0]]
+print(rotation_sample)
+print(np.std(rotation_sample) / np.sqrt(samples))
+
 for s in range(strips):
     for i in range(increments):
-            rotation_samples = rotation_data[s][i][0]
-            print(rotation_data)
-           # rotation_samples = [repetition[-samples:] for repetition in self.get_rotation_data()[strip][increment][:,0]]
-#rotation_errors[strip][increment] = np.std(rotation_samples) / np.sqrt(samples)
+            rotation_samples = [repetition[-samples:] for repetition in rotation_data[s][i][:,0]]
+            rotation_errors[s][i] = np.std(rotation_samples) / np.sqrt(samples)
+
+            polarisation_samples = [repetition[-samples:] for repetition in polarisation_data[s][i][:,0]]
+            polarisation_errors[s][i] = np.std(polarisation_samples) / np.sqrt(samples)
+
+new_folder_path = f'C:/Users/44771/Desktop/Data/2912/2912_1547'
+#os.makedirs(new_folder_path, exist_ok=True)
+np.save(f'{new_folder_path}/polarisation_errors', polarisation_errors)
+np.save(f'{new_folder_path}/rotation_errors', rotation_errors)

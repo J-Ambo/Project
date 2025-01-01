@@ -18,6 +18,9 @@ polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=T
 polarisation_averages = np.load(f'{data_path}/polarisation_averages.npy', allow_pickle=True)
 rotation_averages = np.load(f'{data_path}/rotation_averages.npy', allow_pickle=True)
 
+polarisation_errors = np.load(f'{data_path}/polarisation_errors.npy', allow_pickle=True)
+rotation_errors = np.load(f'{data_path}/rotation_errors.npy', allow_pickle=True)
+
 Population_size, Arena_radius, Timesteps, Repetitions, Increments, Strips = (polarisation_data[0][0][0][1][0], polarisation_data[0][0][0][1][1],
                                                                 polarisation_data[0][0][0][1][2], polarisation_data[0][0][0][1][3], 
                                                                 polarisation_data[0][0][0][1][4], polarisation_data[0][0][0][1][5])
@@ -39,7 +42,6 @@ label = ['$O_p$', '$O_r$']
 colour = ['b', 'r']
 
 for i in range(2):
-
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(5, 4))
     ax.plot_surface(X1, np.tile(Y1, (31,1)).T, O_i1[i], rstride=1, cstride=1, edgecolor=colour[i], color=colour[i], alpha=0.4)
     ax.set_xlabel('$\Delta r_{al}$')
@@ -64,5 +66,13 @@ for i in range(2):
         os.makedirs(plot_dir, exist_ok=True)#
         #plt.savefig(f'{plot_dir}/{label[i]}_{data_file_name2}-{data_file_name3}-{data_file_name1}', dpi=300, bbox_inches=None)#
         plt.savefig(f'{new_folder_path}/{label[i]}', dpi=300, bbox_inches=None)
+
+Errs = [polarisation_errors, rotation_errors]
+X1_mesh, Y1_mesh = np.meshgrid(X1, Y1)
+for i in range(2):
+    fig, ax = plt.subplots(figsize=(5, 4))
+    ax.set_ylim(0.0, Y1[-1])
+    ax.set_xlim(0.0, X1[-1])
+    ax.contourf(X1_mesh, Y1_mesh, Errs[i], cmap='gray_r')
 
 plt.show()
