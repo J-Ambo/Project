@@ -247,16 +247,18 @@ plt.show()
 
 
 import os
-data_path = r"C:\Users\44771\Desktop\Data\2912\2912_1547"
+data_path = r"C:\Users\44771\Desktop\Data\0101\0101_0700"
 data_file_name = os.path.split(data_path)[1]
+data_file_name2 = os.path.split(os.path.split(data_path)[0])[1]
+print(data_file_name2)
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
 rotation_data = np.load(f'{data_path}/rotation_data.npy', allow_pickle=True)
 
-samples=10
-increments=31
-strips=31
-repetitions = 5
+samples=1000
+increments=11
+strips=5
+repetitions = 10
 rotation_errors = np.zeros((strips, increments))
 polarisation_errors = np.zeros((strips, increments))
 
@@ -264,18 +266,44 @@ polarisation_errors = np.zeros((strips, increments))
 print(rotation_data[0][0])
 print(rotation_data[0][0][:,0])
 rotation_sample = [repetition[-samples:] for repetition in rotation_data[0][0][:,0]]
-print(rotation_sample)
+#print(rotation_sample)
 print(np.std(rotation_sample) / np.sqrt(samples))
+
+def pooled_standard_error(data, samples):
+    n = samples
+    dof = samples - 1
+    incs = [repetition[-samples:] for repetition in rotation_data[0][0][:,0]]
+    vars = np.var(incs, ddof=1, axis=1)
+    pooled_stdev = np.sqrt(np.sum(vars)/repetitions)
+    pooled_se = pooled_stdev*np.sqrt(repetitions/samples)
+    return pooled_se
+
+# Example usage:
+pooled_se = pooled_standard_error(rotation_data, samples)
+print(f"Pooled Standard Error: {pooled_se}")
 
 for s in range(strips):
     for i in range(increments):
-            rotation_samples = [repetition[-samples:] for repetition in rotation_data[s][i][:,0]]
-            rotation_errors[s][i] = np.std(rotation_samples) / np.sqrt(samples)
+        rotation_samples = [repetition[-samples:] for repetition in rotation_data[s][i][:,0]]
+        polarisation_samples = [repetition[-samples:] for repetition in polarisation_data[s][i][:,0]]
+        Rvars = np.var(rotation_samples, ddof=1, axis=1)
+        Pvars = np.var(polarisation_samples, ddof=1, axis=1)
 
-            polarisation_samples = [repetition[-samples:] for repetition in polarisation_data[s][i][:,0]]
-            polarisation_errors[s][i] = np.std(polarisation_samples) / np.sqrt(samples)
+        Rpooled_stdev = np.sqrt(np.sum(Rvars)/repetitions)
+        Ppooled_stdev = np.sqrt(np.sum(Pvars)/repetitions)
 
-new_folder_path = f'C:/Users/44771/Desktop/Data/2912/2912_1547'
+        Rpooled_se = Rpooled_stdev*np.sqrt(repetitions/samples)
+        Ppooled_se = Ppooled_stdev*np.sqrt(repetitions/samples)
+        
+        rotation_errors[s][i] = Rpooled_se
+        polarisation_errors[s][i] = Ppooled_se
+        #rotation_samples = [repetition[-samples:] for repetition in rotation_data[s][i][:,0]]
+        #rotation_errors[s][i] = np.std(rotation_samples) / np.sqrt(samples)
+
+        #polarisation_samples = [repetition[-samples:] for repetition in polarisation_data[s][i][:,0]]
+        #polarisation_errors[s][i] = np.std(polarisation_samples) / np.sqrt(samples)
+print(rotation_errors)
+#new_folder_path = f'C:/Users/44771/Desktop/Data/{data_file_name2}/{data_file_name}'
 #os.makedirs(new_folder_path, exist_ok=True)
-np.save(f'{new_folder_path}/polarisation_errors', polarisation_errors)
-np.save(f'{new_folder_path}/rotation_errors', rotation_errors)
+np.save(f'{data_path}/polarisation_errors', polarisation_errors)
+np.save(f'{data_path}/rotation_errors', rotation_errors)

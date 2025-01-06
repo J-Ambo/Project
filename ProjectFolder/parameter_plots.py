@@ -4,15 +4,17 @@ from matplotlib import ticker
 import time
 import os
 import shutil
+from matplotlib.ticker import FormatStrFormatter
 '''Plotting the polarisation and rotation order parameters as functions of
     the alignment and attraction zone widths.
 '''
 plots_on = True
-save_plots = True
+save_plots = False
 
 
 data_path = r"C:\Users\44771\Desktop\Data\2912\2912_1547"
 data_file_name1 = os.path.split(data_path)[1]
+data_file_name2 = os.path.split(os.path.split(data_path)[0])[1]
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
 polarisation_averages = np.load(f'{data_path}/polarisation_averages.npy', allow_pickle=True)
@@ -39,40 +41,42 @@ print(Y1)
 
 O_i1 = [O_p1, O_r1]
 label = ['$O_p$', '$O_r$']
-colour = ['b', 'r']
+colour = [plt.get_cmap('Blues')(0.7), plt.get_cmap('Reds')(0.7)]
+Errs = [polarisation_errors, rotation_errors]
 
+#time_dm = time.strftime('%d%m')
+new_folder_path = f'C:/Users/44771/Desktop/Plots/{data_file_name2}/{data_file_name1}'
 for i in range(2):
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(5, 4))
-    ax.plot_surface(X1, np.tile(Y1, (31,1)).T, O_i1[i], rstride=1, cstride=1, edgecolor=colour[i], color=colour[i], alpha=0.4)
+    ax.plot_surface(X1, np.tile(Y1, (31,1)).T, O_i1[i], rstride=1, cstride=1, edgecolor=colour[i], facecolor=colour[i], alpha=0.4)
+    cont = ax.contourf(X1, Y1, Errs[i], zdir='z', offset=-0.2, cmap='gnuplot', levels=20)
+    cbar = fig.colorbar(cont, location='left', shrink=0.5, pad=0.01, format=FormatStrFormatter('%.2f'))
     ax.set_xlabel('$\Delta r_{al}$')
     ax.set_ylabel('$\Delta r_{at}$')
     ax.set_zlabel(label[i])
-    ax.set_zlim(0, 1)
+    ax.set_zlim(-0.2, 1)
     ax.set_ylim(0.0, Y1[-1])
     ax.set_xlim(0.0, X1[-1])
     ax.invert_xaxis()
-    #ax.[xy]axis.set_[minor|major]_locator(locator)
+
     ax.xaxis.set_major_locator(ticker.FixedLocator([0, 2, 4, 6, 8, 10, 12, 14]))
     ax.yaxis.set_major_locator(ticker.FixedLocator([0, 2, 4, 6, 8, 10, 12, 14]))
     ax.zaxis.set_major_locator(ticker.FixedLocator([0, 0.2, 0.4, 0.6, 0.8, 1.0]))
-    ax.tick_params(pad=1,)
+    ax.tick_params(pad=1)
     #plt.savefig(f"C:/Users/44771/Desktop/GifImages/pan/{label[i]}_rot_{elev}_{azim}.png")
 
-    time_dm = time.strftime('%d%m')
-    new_folder_path = f'C:/Users/44771/Desktop/Plots/{time_dm}/{data_file_name1}'
     if save_plots:
-
-        plot_dir = f'{new_folder_path}'#
-        os.makedirs(plot_dir, exist_ok=True)#
+        os.makedirs(new_folder_path, exist_ok=True)#
         #plt.savefig(f'{plot_dir}/{label[i]}_{data_file_name2}-{data_file_name3}-{data_file_name1}', dpi=300, bbox_inches=None)#
         plt.savefig(f'{new_folder_path}/{label[i]}', dpi=300, bbox_inches=None)
 
-Errs = [polarisation_errors, rotation_errors]
-X1_mesh, Y1_mesh = np.meshgrid(X1, Y1)
+
 for i in range(2):
     fig, ax = plt.subplots(figsize=(5, 4))
     ax.set_ylim(0.0, Y1[-1])
     ax.set_xlim(0.0, X1[-1])
-    ax.contourf(X1_mesh, Y1_mesh, Errs[i], cmap='gray_r')
-
+    ax.contourf(X1, Y1, Errs[i], cmap='gray_r', levels=20)
+    ax.invert_xaxis()
+    if save_plots:
+        plt.savefig(f'{new_folder_path}/Errs_{label[i]}', dpi=300, bbox_inches=None)
 plt.show()

@@ -16,7 +16,7 @@ samples = 1000
 dimensions = 3
 repetitions = 10
 increments = 11
-strips = 5
+strips = 1
 increment_size = 0.5
 
 starting_ral = 1
@@ -25,8 +25,8 @@ Parent.ral = starting_ral
 Parent.rat = starting_rat
 steering_error = 0.15
 Population.steering_error = steering_error
-Parent.perception_angle = np.deg2rad(270)
-Parent.maximal_turning_angle = np.deg2rad(20)
+Parent.perception_angle = np.deg2rad(240)
+Parent.maximal_turning_angle = np.deg2rad(40)
 
 save_data = True
 
@@ -83,7 +83,7 @@ def run_model():
                     data_recorder.update_data(pop, n, i, r, t)
 
             data_recorder.calculate_averages(n, i, samples)
-            data_recorder.calculate_errors(n, i, samples)
+            data_recorder.calculate_errors(n, i, repetitions, samples)
             Parent.increment_rat(increment_size)  #increment the radius of attraction
             Parent.increment_ral(increment_size)  #increment the radius of alignment
 
@@ -92,7 +92,7 @@ def run_model():
         Parent.ral = starting_ral
         #Population.steering_error += 0.05
         #Parent.perception_angle -= np.deg2rad(30)
-        Parent.maximal_turning_angle += np.deg2rad(10)
+        #Parent.maximal_turning_angle += np.deg2rad(10)
 
 
 start_time = time.time()

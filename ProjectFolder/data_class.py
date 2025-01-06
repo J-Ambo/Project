@@ -31,12 +31,20 @@ class DataRecorder:
         rotation_samples = [repetition[-samples:] for repetition in self.get_rotation_data()[strip][increment][:,0]]
         self.average_rotations[strip][increment] = np.mean(rotation_samples)
 
-    def calculate_errors(self, strip, increment, samples):
-        polarisation_samples = [repetition[-samples:] for repetition in self.get_polarisation_data()[strip][increment][:,0]]
-        self.polarisation_errors[strip][increment] = np.std(polarisation_samples) / np.sqrt(samples)
+    def calculate_errors(self, strip, increment, repetitions, samples):
+        rotation_samples = [repetition[-samples:] for repetition in self.get_rotation_data[strip][increment][:,0]]
+        polarisation_samples = [repetition[-samples:] for repetition in self.get_polarisation_data[strip][increment][:,0]]
+        Rvars = np.var(rotation_samples, ddof=1, axis=1)
+        Pvars = np.var(polarisation_samples, ddof=1, axis=1)
 
-        rotation_samples = [repetition[-samples:] for repetition in self.get_rotation_data()[strip][increment][:,0]]
-        self.rotation_errors[strip][increment] = np.std(rotation_samples) / np.sqrt(samples)
+        Rpooled_stdev = np.sqrt(np.sum(Rvars)/repetitions)
+        Ppooled_stdev = np.sqrt(np.sum(Pvars)/repetitions)
+
+        Rpooled_se = Rpooled_stdev*np.sqrt(repetitions/samples)
+        Ppooled_se = Ppooled_stdev*np.sqrt(repetitions/samples)
+
+        self.rotation_errors[strip][increment] = Rpooled_se
+        self.polarisation_errors[strip][increment] = Ppooled_se
 
     def get_polarisation_data(self):
         return self.polarisation_data
