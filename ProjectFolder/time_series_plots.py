@@ -9,8 +9,9 @@ import shutil
 plots_on = True
 save_plots = True
 
-data_path = r"C:\Users\44771\Desktop\Data\2312\2312_1244"
-data_file_name = os.path.split(data_path)[1]
+data_path = r"C:\Users\44771\Desktop\Data\1201\1201_1410"
+data_file_name1 = os.path.split(data_path)[1]
+data_file_name2 = os.path.split(os.path.split(data_path)[0])[1]
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
 rotation_data = np.load(f'{data_path}/rotation_data.npy', allow_pickle=True)
@@ -30,7 +31,7 @@ print(rat_array)
 time_steps = np.linspace(0, int(Timesteps), int(Timesteps))
 if plots_on:
     time_dm = time.strftime('%d%m')
-    new_folder_path = f'C:/Users/44771/Desktop/Plots/{time_dm}/{data_file_name}'
+    new_folder_path = f'C:/Users/44771/Desktop/Plots/{data_file_name2}/{data_file_name1}'
     os.makedirs(new_folder_path, exist_ok=True)
     shutil.copy(f'{data_path}/parameters.txt', new_folder_path)
 

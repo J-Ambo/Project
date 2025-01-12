@@ -32,8 +32,8 @@ class DataRecorder:
         self.average_rotations[strip][increment] = np.mean(rotation_samples)
 
     def calculate_errors(self, strip, increment, repetitions, samples):
-        rotation_samples = [repetition[-samples:] for repetition in self.get_rotation_data[strip][increment][:,0]]
-        polarisation_samples = [repetition[-samples:] for repetition in self.get_polarisation_data[strip][increment][:,0]]
+        rotation_samples = [repetition[-samples:] for repetition in self.get_rotation_data()[strip][increment][:,0]]
+        polarisation_samples = [repetition[-samples:] for repetition in self.get_polarisation_data()[strip][increment][:,0]]
         Rvars = np.var(rotation_samples, ddof=1, axis=1)
         Pvars = np.var(polarisation_samples, ddof=1, axis=1)
 
