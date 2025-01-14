@@ -16,17 +16,18 @@ samples = 1000
 dimensions = 3
 repetitions = 10
 increments = 11
-strips = 1
+strips = 5
 increment_size = 0.5
 
 starting_ral = 1
 starting_rat = 13
+starting_speed = 3
 Parent.ral = starting_ral
 Parent.rat = starting_rat
-steering_error = 0.15
-Population.steering_error = steering_error
-Parent.perception_angle = np.deg2rad(240)
+Population.steering_error = 0.15
+Parent.perception_angle = np.deg2rad(270)
 Parent.maximal_turning_angle = np.deg2rad(40)
+Parent.speed = starting_speed
 
 save_data = True
 
@@ -90,22 +91,20 @@ def run_model():
         Parent.rat = starting_rat
         #Parent.increment_rat(increment_size*(n+1))
         Parent.ral = starting_ral
+        Parent.speed += 0.5
         #Population.steering_error += 0.05
         #Parent.perception_angle -= np.deg2rad(30)
         #Parent.maximal_turning_angle += np.deg2rad(10)
-
 
 start_time = time.time()
 run_model()
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time} seconds")
-#print(data_recorder.get_polarisation_data())
 
 finishing_ral = np.round(data_recorder.get_polarisation_data()[-1][-1][-1][1][-2], 1)
 finishing_rat = np.round(data_recorder.get_polarisation_data()[-1][-1][-1][1][-1], 1)
-#print(finishing_ral)
-#print(finishing_rat)
+finishing_speed = Parent.speed - 0.5
 
 ## Save data
 if save_data:
@@ -130,8 +129,8 @@ if save_data:
         file.write(f'(Range of alignment zone widths: {starting_ral-Parent.rr}-{finishing_ral-Parent.rr})\n')
         file.write(f'Range of radius of attraction: {starting_rat}-{finishing_rat}\n')
         file.write(f'(Range of attraction zone widths: {starting_rat-starting_ral}-{finishing_rat-finishing_ral})\n')
-        file.write(f'Speed: {Parent.speed}\n')
-        file.write(f'Steering error: {steering_error}\n')
+        file.write(f'Speed: {starting_speed}-{finishing_speed}\n')
+        file.write(f'Steering error: {Population.steering_error}\n')
         perception_angle = np.rad2deg(Parent.perception_angle)
         file.write(f'Perception angle: {perception_angle}deg\n')
         maximum_turning_angle = np.rad2deg(Parent.maximal_turning_angle) 

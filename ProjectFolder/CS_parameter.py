@@ -5,9 +5,9 @@ import time
 import os
 import shutil
 
-save_plots = False
+save_plots = True
 
-data_path = r"C:\Users\44771\Desktop\Data\0101\0101_0700"
+data_path = r"C:\Users\44771\Desktop\Data\1401\1401_1535"
 data_file_name1 = os.path.split(data_path)[1]
 data_file_name2 = os.path.split(os.path.split(data_path)[0])[1]
 print(data_file_name2)
@@ -35,49 +35,11 @@ print(X1)
 O_r1 = rotation_averages
 O_p1 = polarisation_averages
 
-'''strip_path1 = r"C:\\Users\\44771\\Desktop\\Data\\1712\\1712_1318"
-Strip_Or_data1 = np.load(f'{strip_path1}/rotation_averages.npy', allow_pickle=True)
-Strip_Op_data1 = np.load(f'{strip_path1}/polarisation_averages.npy', allow_pickle=True)
-
-strip_path2 = r"C:\\Users\\44771\\Desktop\\Data\\1712\\1712_1734"
-Strip_Or_data2 = np.load(f'{strip_path2}/rotation_averages.npy', allow_pickle=True)
-Strip_Op_data2 = np.load(f'{strip_path2}/polarisation_averages.npy', allow_pickle=True)
-
-strip_path3 = r"C:\\Users\\44771\\Desktop\\Data\\1912\\1912_1401"
-Strip_Or_data3 = np.load(f'{strip_path3}/rotation_averages.npy', allow_pickle=True)
-Strip_Op_data3 = np.load(f'{strip_path3}/polarisation_averages.npy', allow_pickle=True)
-
-fig, ax1 = plt.subplots(figsize=(5, 4))
-ax1.set_title('$O_r$ vs $\Delta r_{al}$')
-ax1.set_ylim(0, 1)
-ax1.set_ylabel('$O_r$')
-ax1.set_xlabel('$\Delta r_{al}$')
-ax1.plot(X1, O_r1[0])
-ax1.plot(X1, Strip_Or_data1.reshape(11))
-ax1.plot(X1, Strip_Or_data2.reshape(11))
-ax1.plot(X1, Strip_Or_data3.reshape(11))
-ax1.invert_xaxis()
-
-fig, ax2 = plt.subplots(figsize=(5, 4))
-ax2.set_title('$O_p$ vs $\Delta r_{al}$')
-ax2.set_ylim(0, 1)
-ax2.set_ylabel('$O_p$')
-ax2.set_xlabel('$\Delta r_{al}$')
-ax2.plot(X1, O_p1[0])
-ax2.plot(X1, Strip_Op_data1.reshape(11))
-ax2.plot(X1, Strip_Op_data2.reshape(11))
-ax2.plot(X1, Strip_Op_data3.reshape(11))
-ax2.invert_xaxis()'''
-
-##
-'''strip_path2 = r"C:\\Users\\44771\\Desktop\\Data\\1712\\1712_1734"
-Strip_Or_data2 = np.load(f'{strip_path2}/rotation_averages.npy', allow_pickle=True)
-Strip_Op_data2 = np.load(f'{strip_path2}/polarisation_averages.npy', allow_pickle=True)'''
-
 label = ['$O_r$', '$O_p$']
 data = [O_r1, O_p1]
 errs = [r_errors, p_errors]
-lb = [20, 30, 40, 50, 60]
+lb = [3.0, 3.5, 4.0, 4.5, 5.0]
+#lb = [20, 30, 40, 50, 60]
 #lb = [360, 330, 300, 270, 240]
 #lb = [0.05, 0.10, 0.15, 0.20, 0.25]
 #lb =[240]
@@ -97,7 +59,7 @@ for i in range(2):
     ax1.set_xlabel('$\Delta r_{al}$', size=16.0)
     ax1.tick_params(labelsize=14)
     for j in range(len(polarisation_averages)):
-        ax1.errorbar(X1, data[i][j], yerr=errs[i][j], capsize=2, color=colours[i][j], label=f'{lb[j]}$^\circ s^{{-1}}$') #\sigma$')# #s^{{-1}}$')
+        ax1.errorbar(X1, data[i][j], yerr=errs[i][j], capsize=2, color=colours[i][j], label=f'{lb[j]} $units~s^{{-1}}$')#$^\circ s^{{-1}}$') #\sigma$')# #s^{{-1}}$')
     ax1.invert_xaxis()
     ax1.legend(frameon=False, fontsize=14, loc=locn[i], labelspacing=0.3, handlelength=1.8, handletextpad=0.5)
 
