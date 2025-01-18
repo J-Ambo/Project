@@ -13,18 +13,18 @@ class Population:
         self.population_size = population_size
         self.dimension = environment.dimension
 
-        r = np.random.uniform(0, Parent.rat * 1.2, population_size)
-        phi = np.random.uniform(0, 2*np.pi, population_size)
+        r = np.random.uniform(0, Parent.rat * 1.2, self.population_size)
+        phi = np.random.uniform(0, 2*np.pi, self.population_size)
         if self.dimension == 3:
-            theta = np.random.uniform(0, np.pi, population_size)
+            theta = np.random.uniform(0, np.pi, self.population_size)
             z = r * np.cos(theta)
         else:
-            theta = np.full(population_size, np.pi/2)
-            z = np.zeros(population_size)
+            theta = np.full(self.population_size, np.pi/2)
+            z = np.zeros(self.population_size)
 
         x = r * np.cos(phi)*np.sin(theta)
         y = r * np.sin(phi)*np.sin(theta)
-        self.population_array = np.array([Prey(x=x[n], y=y[n], z=z[n], dimensions=self.dimension) for n in range(population_size)], dtype=object)
+        self.population_array = np.array([Prey(x=x[n], y=y[n], z=z[n], dimensions=self.dimension) for n in range(self.population_size)], dtype=object)
         self.population_positions = np.array([agent.position for agent in self.population_array])
         self.population_directions = np.array([agent.direction for agent in self.population_array])
         self.population_speeds = np.array([agent.speed for agent in self.population_array])
@@ -176,10 +176,13 @@ class Population:
         maximal_directions = np.einsum('ijk,ik->ij', rotation_matrices, self.population_directions)
 
         self.population_directions = np.where(mask[:, np.newaxis], target_directions, maximal_directions)
-        errors = np.random.normal(0, __class__.steering_error, (self.population_size, self.dimension))
+        errors = np.random.normal(0, __class__.steering_error, (self.population_size, 3))
         self.population_directions += errors
 
         self.population_directions /= np.linalg.norm(self.population_directions, axis=1)[:, np.newaxis]
+        if self.dimension == 2:
+            self.population_directions[:,-1] = 0
+
         self.population_directions = np.round(self.population_directions, 4)
 
         # Update positions
@@ -199,7 +202,6 @@ class Population:
 
         inlier_positions = self.population_positions[~outlier_labels]
         inlier_directions = self.population_directions[~outlier_labels]
-
         return inlier_positions, inlier_directions
 
     def calculate_order_parameters(self, tree, distances):

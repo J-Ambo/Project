@@ -17,6 +17,9 @@ class Parent:
         self.position = np.array([x, y, z])   
 
         self.direction = np.random.uniform(-1,1, 3)
+        if dimensions == 2:
+            self.direction[-1] = 0 #ensures that in 2d the fish has no direction component in the z direction
+
         normal = np.linalg.norm(self.direction)
         self.direction /= normal
 
@@ -26,9 +29,6 @@ class Parent:
         self.minimum_turning_radius = 0.2 * self.body_length
         self.maximal_turning_angle = self.__class__.maximal_turning_angle #np.arcsin(self.speed / (2 * self.minimum_turning_radius))
 
-        self.maximal_rotation_matrix = np.array([[np.cos(self.maximal_turning_angle), -np.sin(self.maximal_turning_angle)],
-                                               [np.sin(self.maximal_turning_angle), np.cos(self.maximal_turning_angle)]])
-
         (self.radius_of_repulsion,
         self.radius_of_alignment, 
         self.radius_of_attraction) = self.__class__.rr, self.__class__.ral, self.__class__.rat
@@ -36,7 +36,7 @@ class Parent:
         (self.repulsion_vector, 
          self.alignment_vector, 
          self.attraction_vector, 
-         self.wall_vector) = np.zeros((4,dimensions))
+         self.wall_vector) = np.zeros((4,3))
         
     @classmethod
     def increment_ral(cls, increment):

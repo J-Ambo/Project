@@ -7,6 +7,7 @@ from population_class import Population
 from parent_class import Parent
 import numpy as np
 from sklearn.neighbors import KDTree
+from matplotlib.animation import FuncAnimation
 
 test_prints = False
 env = Environment(10, 3)
@@ -225,7 +226,7 @@ densities = 1 / distances[:, -1]
 #print("distances[:,-1] \n", distances[:,-1])
 print(densities)
 
-# Equivalence classes
+'''# Equivalence classes
 n_classes = 5
 density_bins = np.linspace(densities.min(), densities.max(), n_classes + 1)
 class_labels = np.digitize(densities, density_bins)
@@ -243,7 +244,7 @@ fig = plt.figure(figsize=(8, 6))
 ax = fig.add_subplot(111, projection='3d')
 ax.scatter(points[~outlier_labels, 0], points[~outlier_labels, 1], points[~outlier_labels, 2], c='b', alpha=0.5)
 ax.scatter(points[outlier_labels, 0], points[outlier_labels, 1], points[outlier_labels, 2], c='r', alpha=0.5)
-plt.show()
+plt.show()'''
 
 
 import os
@@ -261,7 +262,6 @@ strips=5
 repetitions = 10
 rotation_errors = np.zeros((strips, increments))
 polarisation_errors = np.zeros((strips, increments))
-
 
 print(rotation_data[0][0])
 print(rotation_data[0][0][:,0])
@@ -305,5 +305,66 @@ for s in range(strips):
 print(rotation_errors)
 #new_folder_path = f'C:/Users/44771/Desktop/Data/{data_file_name2}/{data_file_name}'
 #os.makedirs(new_folder_path, exist_ok=True)
-np.save(f'{data_path}/polarisation_errors', polarisation_errors)
-np.save(f'{data_path}/rotation_errors', rotation_errors)
+
+#np.save(f'{data_path}/polarisation_errors', polarisation_errors)
+#np.save(f'{data_path}/rotation_errors', rotation_errors)
+
+s = 0
+r = 0
+i = 0
+
+fig, ax1 = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(7, 7))
+ax1.set_xlim3d(-200*1.01, 200*1.01)
+ax1.set_ylim3d(-200*1.01, 200*1.01)
+ax1.set_zlim3d(-200*1.01, 200*1.01)
+ax1.set_xlabel('X')
+ax1.set_ylabel('Y')
+ax1.set_zlabel('Z')
+
+d_path = r"C:\Users\44771\Desktop\Data\1801\1801_1658"
+position_data = np.load(f'{d_path}/position_data.npy', allow_pickle=True)
+direction_data = np.load(f'{d_path}/direction_data.npy', allow_pickle=True)
+print(position_data[s][i][r])
+x_positions = position_data[s][i][r][:,:,0]
+y_positions = position_data[s][i][r][:,:,1]
+z_positions = position_data[s][i][r][:,:,2]
+print(x_positions)
+x_directions = direction_data[s][i][r][:,:,0]
+y_directions = direction_data[s][i][r][:,:,1]
+z_directions = direction_data[s][i][r][:,:,2]
+
+quiver = ax1.quiver(x_positions[0], y_positions[0], z_positions[0],
+                       x_directions[0], y_directions[0], z_directions[0],
+                       length=5,
+                       arrow_length_ratio=0.5,
+                       pivot='middle')
+xyscatter = ax1.scatter(x_positions[0],
+                        y_positions[0], 
+                        np.full(50,-200), 
+                        zdir='z', s=10, c='gray', alpha=0.4)
+xzscatter = ax1.scatter(x_positions[0], 
+                        np.full(50,200), 
+                        z_positions[0], 
+                        zdir='y', s=10, c='gray', alpha=0.4)
+yzscatter = ax1.scatter(np.full(50,-200), 
+                        y_positions[0], 
+                        z_positions[0], 
+                        zdir='x', s=10, c='gray', alpha=0.4)
+
+for t in range(300):
+    quiver.set_offsets(np.c_[x_positions[t], y_positions[t], z_positions[t]])
+    quiver.set_UVC(x_directions[t], y_directions[t], z_directions[t])
+    xyscatter = ax1.scatter(x_positions[t], 
+                            y_positions[t], 
+                            np.full(50,-200), 
+                            zdir='z', s=10, c='gray', alpha=0.4)
+    xzscatter = ax1.scatter(x_positions[t], 
+                            np.full(50,200), 
+                            z_positions[t], 
+                            zdir='y', s=10, c='gray', alpha=0.4)
+    yzscatter = ax1.scatter(np.full(50,-200), 
+                            y_positions[t], 
+                            z_positions[t], 
+                            zdir='x', s=10, c='gray', alpha=0.4)
+    ax1.set_title(f'Time: {t} Strip: {s+1} Increment: {i+1} Repetition: {r+1}')
+    plt.pause(0.01)

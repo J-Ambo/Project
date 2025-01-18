@@ -9,17 +9,17 @@ import os
 from line_profiler import profile
 '''This script contains the main sinmulation loop, saving data for later plotting and analysis.'''
 
-population = 100
+population = 50
 arena_radius = 200
-timesteps = 3000
-samples = 1000
+timesteps = 300
+samples = 1
 dimensions = 3
-repetitions = 10
-increments = 11
-strips = 5
+repetitions = 1
+increments = 1
+strips = 1
 increment_size = 0.5
 
-starting_ral = 1
+starting_ral = 4
 starting_rat = 13
 starting_speed = 3
 Parent.ral = starting_ral
@@ -33,32 +33,6 @@ save_data = True
 
 env = Environment(arena_radius, dimensions)
 data_recorder = DataRecorder(population, dimensions, timesteps, repetitions, increments, strips)
-
-'''def run_model():
-    for n in range(strips):
-        print(f"Strip {n+1}, Ral is {Parent.ral}, Rat is {Parent.rat}")
-        for i in range(increments):
-            parameter_array = np.array([population, arena_radius, timesteps, repetitions, increments, strips, Parent.ral, Parent.rat])
-            data_recorder.update_parameters(n, i, 0, parameter_array)
-            print(f"Strip: {n+1}")
-            print(f"Increment {i+1}")
-
-            # Initialize populations for all repetitions
-            populations = [Population(population, env) for _ in range(repetitions)]
-
-            for t in range(timesteps):
-                for r, pop in enumerate(populations):
-                    pop.update_positions(env)
-                    data_recorder.update_data(pop, n, i, r, t)
-
-            data_recorder.update_averages(n, i, samples)
-            Parent.increment_rat(increment_size)  # increment the radius of attraction
-            Parent.increment_ral(increment_size)  # increment the radius of alignment
-
-        Parent.rat = starting_rat
-        Parent.increment_rat(increment_size * (n + 1))
-        Parent.ral = starting_ral'''
-
 
 def run_model():
     for n in range(strips):
@@ -91,7 +65,7 @@ def run_model():
         Parent.rat = starting_rat
         #Parent.increment_rat(increment_size*(n+1))
         Parent.ral = starting_ral
-        Parent.speed += 0.5
+        #Parent.speed += 0.5
         #Population.steering_error += 0.05
         #Parent.perception_angle -= np.deg2rad(30)
         #Parent.maximal_turning_angle += np.deg2rad(10)
@@ -139,6 +113,7 @@ if save_data:
     np.save(f'{new_folder_path}/polarisation_data', data_recorder.get_polarisation_data())
     np.save(f'{new_folder_path}/rotation_data', data_recorder.get_rotation_data())
     np.save(f'{new_folder_path}/position_data', data_recorder.get_position_data())
+    np.save(f'{new_folder_path}/direction_data', data_recorder.get_direction_data())
     np.save(f'{new_folder_path}/polarisation_averages', data_recorder.get_polarisation_averages())
     np.save(f'{new_folder_path}/rotation_averages', data_recorder.get_rotation_averages())
     np.save(f'{new_folder_path}/rotation_errors', data_recorder.get_rotation_errors())

@@ -4,6 +4,7 @@ from line_profiler import profile
 class DataRecorder:
     def __init__(self, population_size, dimensions, time, repetitions, increments, strips):
         self.position_data = np.zeros((strips, increments, repetitions, time, population_size, dimensions))
+        self.direction_data = np.zeros((strips, increments, repetitions, time, population_size, dimensions))
         self.polarisation_data = self.initialize_data(strips, increments, repetitions, time)
         self.rotation_data = self.initialize_data(strips, increments, repetitions, time)
         self.average_polarisations = np.zeros((strips, increments))
@@ -21,6 +22,7 @@ class DataRecorder:
     def update_data(self, population, strip, increment, repetition, time_step):
         self.population = population
         self.position_data[strip, increment, repetition, time_step, :] = self.population.population_positions
+        self.direction_data[strip, increment, repetition, time_step, :] = self.population.population_directions
         self.polarisation_data[strip][increment][repetition][0][time_step] = self.population.polarisation
         self.rotation_data[strip][increment][repetition][0][time_step] = self.population.rotation
 
@@ -54,6 +56,9 @@ class DataRecorder:
     
     def get_position_data(self):
         return self.position_data
+    
+    def get_direction_data(self):
+        return self.direction_data
     
     def get_polarisation_averages(self):
         return self.average_polarisations
