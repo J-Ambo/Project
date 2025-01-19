@@ -41,7 +41,7 @@ class Population:
         rat_neighbours = tree.query_radius(self.population_positions, Parent.rat, return_distance=True)
         return rat_neighbours
     
-    def get_densities(self, tree, distances):
+    def get_densities(self, tree):
         distances, indices = tree.query(self.population_positions, k=10)
         densities = np.zeros(self.population_size)
         for n in range(self.population_size):
@@ -136,6 +136,10 @@ class Population:
                 all_wall_vectors[index] = -position * np.exp(-distance_from_boundary)
         return all_wall_vectors
 
+    def caclulate_flee_vector(self, predator):
+        all_flee_vectors = np.zeros((self.population_size, 3))
+        
+
     @profile
     def update_positions(self, environment, neighbours, distances):
         
@@ -189,8 +193,8 @@ class Population:
         self.population_positions += self.population_speeds[:, np.newaxis] * self.population_directions
         self.population_positions = np.round(self.population_positions, 4)
 
-    def remove_outliers(self, tree, distances):
-        densities = self.get_densities(tree, distances)
+    def remove_outliers(self, tree):
+        densities = self.get_densities(tree)
 
         n_classes = 100
         density_bins = np.linspace(densities.min(), densities.max(), n_classes + 1)
@@ -204,24 +208,28 @@ class Population:
         inlier_directions = self.population_directions[~outlier_labels]
         return inlier_positions, inlier_directions
 
-    def calculate_order_parameters(self, tree, distances):
-            # Calculate average position to each agent
-            inlier_positions, inlier_directions = self.remove_outliers(tree, distances)
-            average_position = np.mean(inlier_positions, axis=0)
-            school_size = len(inlier_positions)
-            #print("N outliers:", self.population_size - school_size)
+    def calculate_average_inlier_position(self, tree):
+        inlier_positions, inlier_directions = self.remove_outliers(tree)
+        average_position = np.mean(inlier_positions, axis=0)
+        return inlier_positions, inlier_directions, average_position
+    
+    def calculate_order_parameters(self, tree):
+        # Calculate average position to each agent
+        inlier_positions, inlier_directions, average_position = self.calculate_average_inlier_position(tree)
+        school_size = len(inlier_positions)
+        #print("N outliers:", self.population_size - school_size)
 
-            average_position_to_agents = inlier_positions - average_position
-            average_position_to_agents /= (np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis])
-            
-            # Calculate order parameters
-            sum_of_directions = np.sum(inlier_directions, axis=0)
-            self.polarisation = np.linalg.norm(sum_of_directions) / school_size
+        average_position_to_agents = inlier_positions - average_position
+        average_position_to_agents /= (np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis])
+        
+        # Calculate order parameters
+        sum_of_directions = np.sum(inlier_directions, axis=0)
+        self.polarisation = np.linalg.norm(sum_of_directions) / school_size
 
-            angular_momenta = np.cross(average_position_to_agents, inlier_directions)
-            self.population_angular_momenta = angular_momenta
-            sum_of_angular_momenta = np.sum(self.population_angular_momenta, axis=0)
-            self.rotation = np.linalg.norm(sum_of_angular_momenta) / school_size
+        angular_momenta = np.cross(average_position_to_agents, inlier_directions)
+        self.population_angular_momenta = angular_momenta
+        sum_of_angular_momenta = np.sum(self.population_angular_momenta, axis=0)
+        self.rotation = np.linalg.norm(sum_of_angular_momenta) / school_size
 
 
 

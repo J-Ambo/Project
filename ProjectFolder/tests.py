@@ -314,9 +314,9 @@ r = 0
 i = 0
 
 fig, ax1 = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(7, 7))
-ax1.set_xlim3d(-200*1.01, 200*1.01)
-ax1.set_ylim3d(-200*1.01, 200*1.01)
-ax1.set_zlim3d(-200*1.01, 200*1.01)
+ax1.set_xlim3d(-20*1.01, 20*1.01)
+ax1.set_ylim3d(-20*1.01, 20*1.01)
+ax1.set_zlim3d(-20*1.01, 20*1.01)
 ax1.set_xlabel('X')
 ax1.set_ylabel('Y')
 ax1.set_zlabel('Z')
@@ -332,6 +332,26 @@ print(x_positions)
 x_directions = direction_data[s][i][r][:,:,0]
 y_directions = direction_data[s][i][r][:,:,1]
 z_directions = direction_data[s][i][r][:,:,2]
+
+
+def get_densities(tree):
+        distances = tree.query(position_data[s][i][r][t], k=10)[0]
+        densities = np.zeros(50)
+        for n in range(50):
+            nN = len(distances[n])-1
+            d = distances[n][-1]
+            density = nN/d
+            densities[n] = density
+        return densities
+def get_outlier_labels(tree):
+        densities = get_densities(tree)
+        n_classes = 100
+        density_bins = np.linspace(densities.min(), densities.max(), n_classes + 1)
+        class_labels = np.digitize(densities, density_bins)
+        # Outlier detection
+        outlier_threshold = 0.1
+        outlier_labels = class_labels <= np.percentile(class_labels, outlier_threshold * 100)
+        return outlier_labels
 
 quiver = ax1.quiver(x_positions[0], y_positions[0], z_positions[0],
                        x_directions[0], y_directions[0], z_directions[0],
@@ -352,8 +372,22 @@ yzscatter = ax1.scatter(np.full(50,-200),
                         zdir='x', s=10, c='gray', alpha=0.4)
 
 for t in range(300):
-    quiver.set_offsets(np.c_[x_positions[t], y_positions[t], z_positions[t]])
-    quiver.set_UVC(x_directions[t], y_directions[t], z_directions[t])
+    tree = KDTree(position_data[s][i][r][t])
+    outlier_labels = get_outlier_labels(tree)
+    #print(outlier_labels)
+    outlier_positions = position_data[s][i][r][t][outlier_labels]
+    #print(outlier_positions)
+    quiver.remove()
+    xyscatter.remove()
+    yzscatter.remove()
+    xzscatter.remove()
+    quiver = ax1.quiver(x_positions[t], y_positions[t], z_positions[t],
+                        x_directions[t], y_directions[t], z_directions[t],
+                        length=5,
+                        arrow_length_ratio=0.5,
+                        pivot='middle',
+                        colors=['r' if outlier else 'b' for outlier in outlier_labels],
+                        linewidths=2)
     xyscatter = ax1.scatter(x_positions[t], 
                             y_positions[t], 
                             np.full(50,-200), 
@@ -366,5 +400,7 @@ for t in range(300):
                             y_positions[t], 
                             z_positions[t], 
                             zdir='x', s=10, c='gray', alpha=0.4)
-    ax1.set_title(f'Time: {t} Strip: {s+1} Increment: {i+1} Repetition: {r+1}')
-    plt.pause(0.01)
+    ax1.set_title(f'Time: {t} Strip: {s+1} Increment: {i+1} Repetition: {r+1} Outliers: {len(outlier_positions)}')
+
+  
+    plt.pause(10)

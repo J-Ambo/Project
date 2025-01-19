@@ -5,6 +5,10 @@ class DataRecorder:
     def __init__(self, population_size, dimensions, time, repetitions, increments, strips):
         self.position_data = np.zeros((strips, increments, repetitions, time, population_size, dimensions))
         self.direction_data = np.zeros((strips, increments, repetitions, time, population_size, dimensions))
+
+        self.predator_position_data = np.zeros((strips, increments, repetitions, time, 1, dimensions))
+        self.predator_direction_data = np.zeros((strips, increments, repetitions, time, 1, dimensions))
+
         self.polarisation_data = self.initialize_data(strips, increments, repetitions, time)
         self.rotation_data = self.initialize_data(strips, increments, repetitions, time)
         self.average_polarisations = np.zeros((strips, increments))
@@ -19,10 +23,12 @@ class DataRecorder:
         self.polarisation_data[strip][increment][repetition][1] = parameters 
         self.rotation_data[strip][increment][repetition][1] = parameters
 
-    def update_data(self, population, strip, increment, repetition, time_step):
+    def update_data(self, population, predator, strip, increment, repetition, time_step):
         self.population = population
         self.position_data[strip, increment, repetition, time_step, :] = self.population.population_positions
         self.direction_data[strip, increment, repetition, time_step, :] = self.population.population_directions
+        self.predator_position_data[strip, increment, repetition, time_step, :] = predator.position
+        self.predator_direction_data[strip, increment, repetition, time_step, :] = predator.direction
         self.polarisation_data[strip][increment][repetition][0][time_step] = self.population.polarisation
         self.rotation_data[strip][increment][repetition][0][time_step] = self.population.rotation
 
@@ -71,6 +77,12 @@ class DataRecorder:
     
     def get_polarisation_errors(self):
         return self.polarisation_errors
+    
+    def get_predator_positions(self):
+        return self.predator_position_data
+    
+    def get_predator_directions(self):
+        return self.predator_direction_data
     
 #data = DataRecorder(5, 3, 10, 4, 2, 3)
 

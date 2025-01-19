@@ -7,23 +7,16 @@ Differs from the Prey class in that it steers towards prey.'''
 '''NOTE: Boundary conditions and steering conditions are not yet up to date with the Prey class.'''
 
 class Predator(Parent):
-    def __init__(self, x, y):
-        super().__init__(x, y)
+    def __init__(self, x, y, z, dimensions):
+        super().__init__(x, y, z, dimensions)
+        self.position = self.position.astype(np.float64)
         self.speed = 0.9*self.speed
         
-    def update_predator(self, other_birds, environment):
-        self.dir += (self.calculate_steering_vector(other_birds)[0] 
-                    + self.calculate_steering_vector(other_birds)[1]
-                    - self.calculate_steering_vector(other_birds)[2])
-        self.dir /= np.linalg.norm(self.dir)
-
-        if self.point_is_out_of_bounds(self.pos[0], environment):
-            self.pos[0] = self.apply_boundary_condition(self.pos[0], environment)
-            self.dir[0] *= -1
-
-        elif self.point_is_out_of_bounds(self.pos[1], environment):
-            self.pos[1] = self.apply_boundary_condition(self.pos[1], environment)
-            self.dir[1] *= -1
-
-        else:
-            self.pos += self.dir * self.speed
+    def calculate_hunting_vector(self, tree, population):
+        average_prey_position = population.calculate_average_inlier_position(tree)[2]
+        hunting_vector = (average_prey_position - self.position) / np.linalg.norm(average_prey_position - self.position)
+        return hunting_vector
+        
+    def update_predator(self, tree, population):
+        self.direction = self.calculate_hunting_vector(tree, population)
+        self.position += self.speed * self.direction

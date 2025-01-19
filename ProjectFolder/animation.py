@@ -9,21 +9,22 @@ import shutil
 '''
 animation_on = True
 
-data_path = r"C:\Users\44771\Desktop\Data\2212\2212_1308"
+data_path = r"C:\Users\44771\Desktop\Data\1901\1901_1551"
 data_file_name = os.path.split(data_path)[1]
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
 position_data = np.load(f'{data_path}/position_data.npy', allow_pickle=True)
+predator_positions = np.load(f'{data_path}/predator_positions.npy', allow_pickle=True)
 
 Population_size, Arena_radius, Timesteps, Repetitions, Increments, Strips = (polarisation_data[0][0][0][1][0], polarisation_data[0][0][0][1][1],
                                                                 polarisation_data[0][0][0][1][2], polarisation_data[0][0][0][1][3], 
                                                                 polarisation_data[0][0][0][1][4], polarisation_data[0][0][0][1][5])
 
 # Pick which (s)trip, (i)ncrement, (r)epetition to animate
-s = 4
-i = 4
-r = 7
-
+s = 0
+i = 0
+r = 0
+print(predator_positions[s][i][r][0][0][1])
 # Animation
 if animation_on:
 
@@ -35,11 +36,19 @@ if animation_on:
     ax1.set_ylabel('Y')
     ax1.set_zlabel('Z')
 
-    scatter3D = ax1.scatter(np.array([pos[0] for pos in position_data[s][i][r][0]]),
-                            np.array([pos[1] for pos in position_data[s][i][r][0]]), 
-                            np.array([pos[2] for pos in position_data[s][i][r][0]]),
+    x_positions = np.array([pos[0] for pos in position_data[s][i][r][0]])
+    y_positions = np.array([pos[1] for pos in position_data[s][i][r][0]])
+    z_positions = np.array([pos[2] for pos in position_data[s][i][r][0]])
+    scatter3D = ax1.scatter(x_positions,
+                            y_positions, 
+                            z_positions,
                             s=10,
                             c='blue')
+    predator_scatter = ax1.scatter(predator_positions[s][i][r][0][0][0],
+                                   predator_positions[s][i][r][0][0][1],
+                                   predator_positions[s][i][r][0][0][2],
+                                   s=10,
+                                   c='red')
     xyscatter = ax1.scatter(np.array([pos[0] for pos in position_data[s][i][r][0]]),
                             np.array([pos[1] for pos in position_data[s][i][r][0]]), 
                             np.full(int(Population_size),-Arena_radius), 
@@ -55,8 +64,11 @@ if animation_on:
 
     for t in range(int(Timesteps)):
         scatter3D._offsets3d = (np.array([pos[0] for pos in position_data[s][i][r][t]]),
-                                np.array([pos[1] for pos in position_data[s][i][r][t]]), 
-                                np.array([pos[2] for pos in position_data[s][i][r][t]]))
+                    np.array([pos[1] for pos in position_data[s][i][r][t]]), 
+                    np.array([pos[2] for pos in position_data[s][i][r][t]]))
+        predator_scatter._offsets3d = (np.array([predator_positions[s][i][r][t][0][0]]),
+                           np.array([predator_positions[s][i][r][t][0][1]]), 
+                           np.array([predator_positions[s][i][r][t][0][2]]))
         xyscatter._offsets3d = (np.array([pos[0] for pos in position_data[s][i][r][t]]), 
                                 np.array([pos[1] for pos in position_data[s][i][r][t]]),
                                 np.full(int(Population_size),-Arena_radius))

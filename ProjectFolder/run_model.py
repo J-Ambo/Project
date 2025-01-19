@@ -4,6 +4,7 @@ from parent_class import Parent
 from environment_class import Environment
 from population_class import Population
 from data_class import DataRecorder
+from predator_class import Predator
 import time
 import os
 from line_profiler import profile
@@ -42,6 +43,7 @@ def run_model():
             for r in range(repetitions):
                 parameter_array = np.array([population, arena_radius, timesteps, repetitions, increments, strips, Parent.ral, Parent.rat])
                 pop = Population(population, env)
+                predator = Predator(0, 0, -200, 3)
                 data_recorder.update_parameters(n, i, r, parameter_array)
                 print(f"Strip: {n+1}")
                 print(f"Increment {i+1}")
@@ -54,8 +56,9 @@ def run_model():
                     distances = neighbours_distances[1]
 
                     pop.update_positions(env, neighbours, distances)
-                    pop.calculate_order_parameters(tree, distances)
-                    data_recorder.update_data(pop, n, i, r, t)
+                    predator.update_predator(tree, pop)
+                    pop.calculate_order_parameters(tree)
+                    data_recorder.update_data(pop, predator, n, i, r, t)
 
             data_recorder.calculate_averages(n, i, samples)
             data_recorder.calculate_errors(n, i, repetitions, samples)
@@ -118,5 +121,6 @@ if save_data:
     np.save(f'{new_folder_path}/rotation_averages', data_recorder.get_rotation_averages())
     np.save(f'{new_folder_path}/rotation_errors', data_recorder.get_rotation_errors())
     np.save(f'{new_folder_path}/polarisation_errors', data_recorder.get_polarisation_errors())
-
+    np.save(f'{new_folder_path}/predator_positions', data_recorder.get_predator_positions())
+    np.save(f'{new_folder_path}/predator_directions', data_recorder.get_predator_directions())
 
