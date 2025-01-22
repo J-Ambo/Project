@@ -10,10 +10,10 @@ import os
 from line_profiler import profile
 '''This script contains the main sinmulation loop, saving data for later plotting and analysis.'''
 
-population = 50
+population = 300
 arena_radius = 200
 timesteps = 300
-samples = 1
+samples = 2   #number of timesteps to include in the averages(counted from the last timestep)
 dimensions = 3
 repetitions = 1
 increments = 1
@@ -36,16 +36,16 @@ env = Environment(arena_radius, dimensions)
 data_recorder = DataRecorder(population, dimensions, timesteps, repetitions, increments, strips)
 
 def run_model():
-    for n in range(strips):
-        print(f"Strip {n+1}, Ral is {Parent.ral}, Rat is {Parent.rat}")
+    for s in range(strips):
+        print(f"Strip {s+1}, Ral is {Parent.ral}, Rat is {Parent.rat}")
         print('Angle',Parent.maximal_turning_angle)
         for i in range(increments):
             for r in range(repetitions):
                 parameter_array = np.array([population, arena_radius, timesteps, repetitions, increments, strips, Parent.ral, Parent.rat])
-                pop = Population(population, env)
                 predator = Predator(0, 0, -200, 3)
-                data_recorder.update_parameters(n, i, r, parameter_array)
-                print(f"Strip: {n+1}")
+                pop = Population(population, env, predator)
+                data_recorder.update_parameters(s, i, r, parameter_array)
+                print(f"Strip: {s+1}")
                 print(f"Increment {i+1}")
                 print(f"Repetition {r+1}")
                 
@@ -57,11 +57,13 @@ def run_model():
 
                     pop.update_positions(env, neighbours, distances)
                     predator.update_predator(tree, pop)
+                    #pop.update_all_positions(predator)
                     pop.calculate_order_parameters(tree)
-                    data_recorder.update_data(pop, predator, n, i, r, t)
+                    data_recorder.update_data(pop, predator, s, i, r, t)
+                    print('TIME',t+1)
 
-            data_recorder.calculate_averages(n, i, samples)
-            data_recorder.calculate_errors(n, i, repetitions, samples)
+            data_recorder.calculate_averages(s, i, samples)
+            data_recorder.calculate_errors(s, i, repetitions, samples)
             Parent.increment_rat(increment_size)  #increment the radius of attraction
             Parent.increment_ral(increment_size)  #increment the radius of alignment
 
