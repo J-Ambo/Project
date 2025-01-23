@@ -10,7 +10,7 @@ import os
 from line_profiler import profile
 '''This script contains the main sinmulation loop, saving data for later plotting and analysis.'''
 
-population = 300
+population = 100
 arena_radius = 200
 timesteps = 300
 samples = 2   #number of timesteps to include in the averages(counted from the last timestep)
@@ -38,29 +38,24 @@ data_recorder = DataRecorder(population, dimensions, timesteps, repetitions, inc
 def run_model():
     for s in range(strips):
         print(f"Strip {s+1}, Ral is {Parent.ral}, Rat is {Parent.rat}")
-        print('Angle',Parent.maximal_turning_angle)
         for i in range(increments):
             for r in range(repetitions):
                 parameter_array = np.array([population, arena_radius, timesteps, repetitions, increments, strips, Parent.ral, Parent.rat])
                 predator = Predator(0, 0, -200, 3)
                 pop = Population(population, env, predator)
                 data_recorder.update_parameters(s, i, r, parameter_array)
-                print(f"Strip: {s+1}")
-                print(f"Increment {i+1}")
-                print(f"Repetition {r+1}")
                 
                 for t in range(timesteps):
                     tree = pop.get_tree()
-                    neighbours_distances = pop.find_neighbours(tree)
-                    neighbours = neighbours_distances[0]
-                    distances = neighbours_distances[1]
-
-                    pop.update_positions(env, neighbours, distances)
-                    predator.update_predator(tree, pop)
-                    #pop.update_all_positions(predator)
+                    pop.update_positions(tree, env, predator)
+                    predator.update_predator(pop)
+                    pop.update_all_positions(predator)
+                    #print(pop.all_positions)
+                    #print(pop.population_positions)
+                   
                     pop.calculate_order_parameters(tree)
                     data_recorder.update_data(pop, predator, s, i, r, t)
-                    print('TIME',t+1)
+                    #print('TIME',t+1)
 
             data_recorder.calculate_averages(s, i, samples)
             data_recorder.calculate_errors(s, i, repetitions, samples)

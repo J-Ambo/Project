@@ -10,6 +10,7 @@ from line_profiler import profile
 
 class Population:
     steering_error = 0.15
+    selfish = True      #are individuals selfish(True) (i.e.only consider escape when threatened, ignore group) or unselfish(False) (i.e. try to maintain group cohesion and escape when threatened)
     def __init__(self, population_size, environment, predator):
         self.population_size = population_size
         self.dimension = environment.dimension
@@ -30,9 +31,11 @@ class Population:
         y = r * np.sin(phi)*np.sin(theta)
         self.population_array = np.array([Prey(x=x[n], y=y[n], z=z[n], dimensions=self.dimension) for n in range(self.population_size)], dtype=object)
         self.population_positions = np.array([agent.position for agent in self.population_array])
+        #print(self.population_positions)
         self.population_directions = np.array([agent.direction for agent in self.population_array])
 
         self.all_positions = np.vstack((self.population_positions, predator.position))   #all positions including the predator
+        #print(self.all_positions)
         self.all_directions = np.vstack((self.population_directions, predator.direction))
         self.all_agents = np.concatenate([self.population_array, [predator]])
        
@@ -50,32 +53,25 @@ class Population:
     def find_neighbours(self, tree):
         rat_neighbours = tree.query_radius(self.population_positions, Parent.rat, return_distance=True)
         neighbour_indices = rat_neighbours[0]
-        #print('Before',neighbour_indices[0])
         neighbour_distances = rat_neighbours[1]
-
+        #print(neighbour_distances[-1], neighbour_indices[-1])
         # Remove hidden indices for each agent
         for index in range(self.population_size):
             neighbour_indices[index], neighbour_distances[index] = self.remove_hidden_indices(index, neighbour_indices[index], neighbour_distances[index])
-            predator_mask = [isinstance(self.all_agents[neighbour], Predator) for neighbour in neighbour_indices[index]]
-            if np.any(predator_mask):
-                #if one of the neighbours is a predator add its index only
-                neighbour_indices[index] = neighbour_indices[index][predator_mask]  
-                neighbour_distances[index] = neighbour_distances[index][predator_mask]
-                print(neighbour_indices)
-                return neighbour_indices, neighbour_distances
-            else:
-                return neighbour_indices, neighbour_distances
-    
-    def get_densities(self, tree):
-        Nn = 10
-        distances = tree.query(self.population_positions, k=Nn)[0]
-        cache_key = hash(self.population_positions.tobytes())
-        if cache_key in self._density_cache:
-            return self._density_cache[cache_key]
-        
-        densities = (Nn-1)/distances[:, -1]
-        self._density_cache[cache_key] = densities
-        return densities
+            predator_mask = np.array([isinstance(self.all_agents[neighbour], Predator) for neighbour in neighbour_indices[index]])
+
+            #print(np.any(predator_mask))
+            if self.selfish:
+                if np.any(predator_mask):
+                    #if one of the neighbours is a predator add its index only
+                    print(neighbour_indices[index])
+                    neighbour_indices_copy = neighbour_indices[index][predator_mask].copy()
+                    neighbour_distances_copy = neighbour_distances[index][predator_mask].copy()
+                    neighbour_indices[index] = neighbour_indices_copy
+                    neighbour_distances[index] = neighbour_distances_copy
+                    print(neighbour_indices[index])
+                
+        return neighbour_indices, neighbour_distances
 
     # Remove neighbours which are within the blind volume. 
     def remove_hidden_indices(self, index, indices, distances):
@@ -91,8 +87,8 @@ class Population:
         if cache_key in self._positions_cache:
             return self._positions_cache[cache_key]
         
-        neighbour_positions = self.population_positions[indices_ex_self]
-        focus_position = self.population_positions[index]
+        neighbour_positions = self.all_positions[indices_ex_self]
+        focus_position = self.all_positions[index]
 
         directions_to_neighbours = (neighbour_positions - focus_position)
         np.divide(directions_to_neighbours, distances_ex_self[:,np.newaxis], out=directions_to_neighbours)
@@ -100,7 +96,7 @@ class Population:
         #print(neighbour_positions, focus_position, neighbour_positions-focus_position, distances,  np.linalg.norm(neighbour_positions - focus_position, axis=1))
         dot_products = np.dot(directions_to_neighbours, self.population_directions[index])
         dot_products = np.round(dot_products, 3)
-        print(dot_products)
+        #print(dot_products)
         angles_to_neighbours = np.arccos(dot_products)
         #print(index, distances, np.linalg.norm(neighbour_positions - focus_position, axis=1))
         mask = angles_to_neighbours <= self.half_perception_angle
@@ -113,8 +109,8 @@ class Population:
     def calculate_repulsion_vectors(self, neighbours, distances):
         all_repulsion_vectors = np.zeros((self.population_size, 3))
         for index in range(self.population_size):
-            #if np.any(isinstance(agent, Predator) for agent in neighbours[index]):
-                #continue
+            if self.population_size in neighbours[index]:
+                continue
             neighbour_distances = distances[index]
             zone_condition = (neighbour_distances > 0) & (neighbour_distances < Parent.rr)
 
@@ -141,14 +137,16 @@ class Population:
     def caculate_alignment_vectors(self, neighbours, distances):
         all_alignment_vectors = np.empty((self.population_size, 3))
         for index in range(self.population_size):
-            #if np.any(isinstance(agent, Predator) for agent in neighbours[index]):
-                #continue
+            if self.population_size in neighbours[index]:
+                continue
             neighbour_distances = distances[index]
             zone_condition = (neighbour_distances > Parent.rr) & (neighbour_distances < Parent.ral)
+
             if not np.any(zone_condition):
                 continue
+
             selected_indices = neighbours[index][zone_condition]
-            selected_distances = neighbour_distances[zone_condition]
+            #selected_distances = neighbour_distances[zone_condition]
 
            # print('Alignment distances', selected_distances)
             if selected_indices.size == 0:
@@ -163,10 +161,15 @@ class Population:
     def calculate_attraction_vectors(self, neighbours, distances):
         all_attraction_vectors = np.empty((self.population_size, 3))
         for index in range(self.population_size):
+            if self.population_size in neighbours[index]:
+                continue
+
             neighbour_distances = distances[index]
             zone_condition = (neighbour_distances > Parent.ral) & (neighbour_distances < Parent.rat)
+
             if not np.any(zone_condition):
                 continue
+
             selected_indices = neighbours[index][zone_condition]
             selected_distances = neighbour_distances[zone_condition]
 
@@ -177,6 +180,7 @@ class Population:
             pos = self.population_positions[index]
             cj_minus_ci = cjs - pos
             np.divide(cj_minus_ci, selected_distances[:, np.newaxis], out=cj_minus_ci)
+
             sum_of_normalised = np.sum(cj_minus_ci, axis=0)
             all_attraction_vectors[index] = sum_of_normalised
         return all_attraction_vectors
@@ -194,29 +198,47 @@ class Population:
                 all_wall_vectors[index] = -position * np.exp(-distance_from_boundary)
         return all_wall_vectors
 
-    def caclulate_escape_vector(self, predator, distances):
+    def caclulate_escape_vectors(self, predator, neighbours, distances):
         all_escape_vectors = np.zeros((self.population_size, 3))
-        ##for index in range(self.population_size):
-            ##if
-            ##neighbour_distances = distances[index]
-            ##zone_condition = (neighbour_distances > 0) & (neighbour_distances < Parent.rat)
+        for index in range(self.population_size):
+            if not self.population_size in neighbours[index]:
+                continue
+            predator_distance = distances[index]
+            zone_condition = (predator_distance > 0) & (predator_distance < Parent.rat)
+            if not np.any(zone_condition):
+                continue
 
-            
-    def update_positions(self, environment, neighbours, distances):
-        
+            cj = predator.position
+            pos = self.population_positions[index]
+
+            cj_minus_ci = cj - pos
+            print(cj_minus_ci)
+            print(predator_distance)
+            np.divide(cj_minus_ci, predator_distance, out=cj_minus_ci)
+
+            sum_of_normalised = np.sum(cj_minus_ci, axis=0)
+            all_escape_vectors[index] = -sum_of_normalised
+        return all_escape_vectors
+
+    def calculate_target_directions(self, tree,  environment, predator):
+        neighbours_distances = self.find_neighbours(tree)
+        neighbours = neighbours_distances[0]
+        distances = neighbours_distances[1]
+
         repulsion_vectors = self.calculate_repulsion_vectors(neighbours, distances)
         alignment_vectors = self.caculate_alignment_vectors(neighbours, distances)
         attraction_vectors = self.calculate_attraction_vectors(neighbours, distances)
-        boundary_vectors = self.calculate_wall_vectors(environment)
-        sum_of_vectors = np.sum((repulsion_vectors, alignment_vectors, attraction_vectors, boundary_vectors), axis=0)
-        #print(attraction_vectors)
-        # Determine target directions
+        boundary_vectors = self.calculate_wall_vectors(environment)    
+        escape_vector = self.caclulate_escape_vectors(predator, neighbours, distances)
+
+        sum_of_vectors = np.sum((repulsion_vectors, alignment_vectors, attraction_vectors, boundary_vectors, escape_vector), axis=0)
         mask_zero = np.all(sum_of_vectors == 0, axis=1)
         target_directions = np.where(mask_zero[:, np.newaxis], self.population_directions, sum_of_vectors)
-        #print(sum_of_vectors)
-        #print(target_directions)
         np.divide(target_directions, np.linalg.norm(target_directions, axis=1, keepdims=True),out=target_directions)
-
+        return target_directions
+        
+    def update_positions(self, tree, environment, predator):
+        target_directions = self.calculate_target_directions(tree, environment, predator)
         # Calculate angles to target directions
         dot_products = np.einsum('ij, ij->i',self.population_directions, target_directions, optimize=True)
         angles_to_target_directions = np.arccos(np.clip(dot_products, -1.0, 1.0))
@@ -269,6 +291,17 @@ class Population:
         self._all_positions[-1] = predator.position
         self.all_positions = self._all_positions
 
+    def get_densities(self, tree):
+        Nn = 10
+        distances = tree.query(self.population_positions, k=Nn)[0]
+        cache_key = hash(self.population_positions.tobytes())
+        if cache_key in self._density_cache:
+            return self._density_cache[cache_key]
+        
+        densities = (Nn-1)/distances[:, -1]
+        self._density_cache[cache_key] = densities
+        return densities
+    
     def remove_outliers(self, tree):
         densities = self.get_densities(tree)
 

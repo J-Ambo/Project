@@ -12,14 +12,14 @@ class Predator(Parent):
         self.position = self.position.astype(np.float64)
         self.speed = 0.9*self.speed
         
-    def calculate_hunting_vector(self, tree, population):
+    def calculate_hunting_vector(self, population):
         average_prey_position = population.average_school_position
         #print(average_prey_position)
         hunting_vector = (average_prey_position - self.position) / np.linalg.norm(average_prey_position - self.position) + 1e-6
         return hunting_vector
         
-    def update_predator(self, tree, population):
-        self.direction = self.calculate_hunting_vector(tree, population)
+    def update_predator(self, population):
+        self.direction = self.calculate_hunting_vector(population)
         #print(self.direction)
         self.position += self.speed * self.direction
         #print(self.position)
