@@ -20,8 +20,7 @@ class Parent:
         if dimensions == 2:
             self.direction[-1] = 0 #ensures that in 2d the fish has no direction component in the z direction
 
-        normal = np.linalg.norm(self.direction)
-        self.direction /= normal
+        self.direction /= np.linalg.norm(self.direction)
 
         self.body_length = 1
         self.speed =  self.__class__.speed  #np.clip(np.random.normal(loc=0.5, scale=0.1), 0.45, 0.55)     #np.random.choice(np.linspace(0.5, 1, 5))

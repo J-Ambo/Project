@@ -10,7 +10,7 @@ import os
 from line_profiler import profile
 '''This script contains the main sinmulation loop, saving data for later plotting and analysis.'''
 
-population = 100
+population = 150
 arena_radius = 200
 timesteps = 300
 samples = 2   #number of timesteps to include in the averages(counted from the last timestep)
@@ -31,6 +31,7 @@ Parent.maximal_turning_angle = np.deg2rad(40)
 Parent.speed = starting_speed
 
 save_data = True
+predator_on = True
 
 env = Environment(arena_radius, dimensions)
 data_recorder = DataRecorder(population, dimensions, timesteps, repetitions, increments, strips)
@@ -41,21 +42,20 @@ def run_model():
         for i in range(increments):
             for r in range(repetitions):
                 parameter_array = np.array([population, arena_radius, timesteps, repetitions, increments, strips, Parent.ral, Parent.rat])
-                predator = Predator(0, 0, -200, 3)
+                predator = Predator(0, 0, -200, 3, predator_on)
                 pop = Population(population, env, predator)
                 data_recorder.update_parameters(s, i, r, parameter_array)
                 
                 for t in range(timesteps):
                     tree = pop.get_tree()
                     pop.update_positions(tree, env, predator)
-                    predator.update_predator(pop)
+                    predator.update_predator(tree, pop)
                     pop.update_all_positions(predator)
                     #print(pop.all_positions)
                     #print(pop.population_positions)
                    
-                    pop.calculate_order_parameters(tree)
+                    pop.calculate_order_parameters()
                     data_recorder.update_data(pop, predator, s, i, r, t)
-                    #print('TIME',t+1)
 
             data_recorder.calculate_averages(s, i, samples)
             data_recorder.calculate_errors(s, i, repetitions, samples)
@@ -65,7 +65,7 @@ def run_model():
         Parent.rat = starting_rat
         #Parent.increment_rat(increment_size*(n+1))
         Parent.ral = starting_ral
-        #Parent.speed += 0.5
+        Parent.speed += 0.4
         #Population.steering_error += 0.05
         #Parent.perception_angle -= np.deg2rad(30)
         #Parent.maximal_turning_angle += np.deg2rad(10)
@@ -78,7 +78,7 @@ print(f"Execution time: {execution_time} seconds")
 
 finishing_ral = np.round(data_recorder.get_polarisation_data()[-1][-1][-1][1][-2], 1)
 finishing_rat = np.round(data_recorder.get_polarisation_data()[-1][-1][-1][1][-1], 1)
-finishing_speed = Parent.speed - 0.5
+finishing_speed = Parent.speed #- 0.5
 
 ## Save data
 if save_data:
