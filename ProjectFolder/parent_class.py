@@ -28,15 +28,6 @@ class Parent:
         self.minimum_turning_radius = 0.2 * self.body_length
         self.maximal_turning_angle = self.__class__.maximal_turning_angle #np.arcsin(self.speed / (2 * self.minimum_turning_radius))
 
-        (self.radius_of_repulsion,
-        self.radius_of_alignment, 
-        self.radius_of_attraction) = self.__class__.rr, self.__class__.ral, self.__class__.rat
-
-        (self.repulsion_vector, 
-         self.alignment_vector, 
-         self.attraction_vector, 
-         self.wall_vector) = np.zeros((4,3))
-        
     @classmethod
     def increment_ral(cls, increment):
         cls.ral += increment

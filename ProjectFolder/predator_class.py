@@ -10,7 +10,7 @@ class Predator(Parent):
     def __init__(self, x, y, z, dimensions, on):
         super().__init__(x, y, z, dimensions)
         self.position = self.position.astype(np.float64)
-        self.speed = 0.9*self.speed * on
+        self.speed = 1.2*self.speed * on
         self.attack_radius = 20
     
     def calculate_hunting_vector(self, tree, population):     #calculates the vector towards the densest region
@@ -29,6 +29,14 @@ class Predator(Parent):
             return attack_vector
         else:
             return np.zeros_like(self.position)
+        
+    def calculate_direction(self, tree, population):
+
+        #if np.linalg.norm(self.position - population.average_school_position) < 1:
+         #   self.direction *= 1
+        #else:
+        self.direction = self.calculate_hunting_vector(tree, population) #+ self.calculate_attack_vector(tree, population)
+        return self.direction
 
     def get_densities(self, tree, population):
         Nn = 20
@@ -46,7 +54,4 @@ class Predator(Parent):
         return population.population_positions[np.argmax(densities)]
     
     def update_predator(self, tree, population):
-        self.direction = self.calculate_hunting_vector(tree, population) + self.calculate_attack_vector(tree, population)
-        #print(self.direction)
-        self.position += self.speed * self.direction
-        #print(self.position)
+        self.position += self.speed * self.calculate_direction(tree, population)
