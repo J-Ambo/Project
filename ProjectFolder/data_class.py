@@ -8,6 +8,7 @@ class DataRecorder:
 
         self.predator_position_data = np.zeros((strips, increments, repetitions, time, 1, dimensions))
         self.predator_direction_data = np.zeros((strips, increments, repetitions, time, 1, dimensions))
+        self.predator_prey_distances = np.zeros((strips, increments, repetitions, time))
 
         self.polarisation_data = self.initialize_data(strips, increments, repetitions, time)
         self.rotation_data = self.initialize_data(strips, increments, repetitions, time)
@@ -24,13 +25,15 @@ class DataRecorder:
         self.rotation_data[strip][increment][repetition][1] = parameters
 
     def update_data(self, population, predator, strip, increment, repetition, time_step):
-        self.population = population
-        self.position_data[strip, increment, repetition, time_step, :] = self.population.population_positions
-        self.direction_data[strip, increment, repetition, time_step, :] = self.population.population_directions
+        self.position_data[strip, increment, repetition, time_step, :] = population.population_positions
+        self.direction_data[strip, increment, repetition, time_step, :] = population.population_directions
+
         self.predator_position_data[strip, increment, repetition, time_step, :] = predator.position
         self.predator_direction_data[strip, increment, repetition, time_step, :] = predator.direction
-        self.polarisation_data[strip][increment][repetition][0][time_step] = self.population.polarisation
-        self.rotation_data[strip][increment][repetition][0][time_step] = self.population.rotation
+        self.predator_prey_distances[strip, increment, repetition, time_step] = predator.minimum_distance_to_prey
+
+        self.polarisation_data[strip][increment][repetition][0][time_step] = population.polarisation
+        self.rotation_data[strip][increment][repetition][0][time_step] = population.rotation
 
     def calculate_averages(self, strip, increment, samples):
         polarisation_samples = [repetition[-samples:] for repetition in self.get_polarisation_data()[strip][increment][:,0]]
@@ -84,6 +87,8 @@ class DataRecorder:
     def get_predator_directions(self):
         return self.predator_direction_data
     
+    def get_predator_prey_distances(self):
+        return self.get_predator_prey_distances
 #data = DataRecorder(5, 3, 10, 4, 2, 3)
 
 '''print(f"All: \n{data.get_polarisation_data()}")

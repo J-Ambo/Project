@@ -31,14 +31,14 @@ class Population:
         self.population_directions = np.array([agent.direction for agent in self.population_array])
 
         self.all_positions = np.vstack((self.population_positions, predator.position))   #all positions including the predator
-        #print(self.all_positions)
         self.all_directions = np.vstack((self.population_directions, predator.direction))
         self.all_agents = np.concatenate([self.population_array, [predator]])
        
         self.population_speeds = np.array([agent.speed for agent in self.population_array])
         self.dimension = environment.dimension
-                 
-        self.average_school_position = np.zeros(3)
+        
+        self.inlier_positions = None
+        self.average_school_position = None
         self.polarisation = 0   # Polarisation order parameter
         self.rotation = 0    # Rotation order parameter
 
@@ -277,7 +277,7 @@ class Population:
         self.all_positions = self._all_positions
     
     def remove_outliers(self):
-        lof = LocalOutlierFactor(n_neighbors=20, algorithm='kd_tree', contamination='auto')
+        lof = LocalOutlierFactor(n_neighbors=10, algorithm='kd_tree', contamination='auto')
         outlier_mask = lof.fit_predict(self.population_positions) == -1
         
         if not np.any(outlier_mask):
@@ -288,6 +288,7 @@ class Population:
     def calculate_average_inlier_position(self):
         inlier_positions, inlier_directions = self.remove_outliers()
         self.average_school_position = np.mean(inlier_positions, axis=0)
+        self.inlier_positions = inlier_positions
         return inlier_positions, inlier_directions
     
     def calculate_order_parameters(self):
