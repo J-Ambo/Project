@@ -88,7 +88,7 @@ class DataRecorder:
         return self.predator_direction_data
     
     def get_predator_prey_distances(self):
-        return self.get_predator_prey_distances
+        return self.predator_prey_distances
 #data = DataRecorder(5, 3, 10, 4, 2, 3)
 
 '''print(f"All: \n{data.get_polarisation_data()}")
