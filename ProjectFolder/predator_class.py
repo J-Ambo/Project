@@ -7,10 +7,10 @@ Differs from the Prey class in that it steers towards prey.'''
 '''NOTE: Boundary conditions and steering conditions are not yet up to date with the Prey class.'''
 
 class Predator(Parent):
-    def __init__(self, x, y, z, dimensions, on):
+    def __init__(self, x, y, z, dimensions):
         super().__init__(x, y, z, dimensions)
         self.position = self.position.astype(np.float64)
-        self.speed = 2*self.speed * on
+        self.speed = 2*self.speed
         self.attack_radius = 20
         self.minimum_distance_to_prey = None   #np.array([])
         self.fixed_direction = None
