@@ -10,9 +10,9 @@ import os
 from line_profiler import profile
 '''This script contains the main sinmulation loop, saving data for later plotting and analysis.'''
 
-population = 150
+population = 50
 arena_radius = 200
-timesteps = 300
+timesteps = 200
 samples = 2   #number of timesteps to include in the averages(counted from the last timestep)
 dimensions = 3
 repetitions = 1
@@ -20,17 +20,20 @@ increments = 1
 strips = 1
 increment_size = 0.5
 
-starting_ral = 4
+starting_ral = 3.7
 starting_rat = 13
-starting_speed = 3
+starting_speed = 1
 Parent.ral = starting_ral
 Parent.rat = starting_rat
-Population.steering_error = 0.15
+Population.steering_error = 0.1
 Parent.perception_angle = np.deg2rad(270)
 Parent.maximal_turning_angle = np.deg2rad(40)
+Parent.evasion_angle = np.deg2rad(30)
 Parent.speed = starting_speed
+Population.selfish = 0
 
-save_data = True
+#np.random.seed(42)
+save_data = False
 predator_on = True
 
 env = Environment(arena_radius, dimensions)
@@ -42,33 +45,37 @@ def run_model():
         for i in range(increments):
             for r in range(repetitions):
                 parameter_array = np.array([population, arena_radius, timesteps, repetitions, increments, strips, Parent.ral, Parent.rat])
-                predator = Predator(0, 0, -200, 3, predator_on)
+                predator = Predator(0, 0, -200, 3)
+                if not predator_on:
+                    predator.speed = 0
+
                 pop = Population(population, env, predator)
                 data_recorder.update_parameters(s, i, r, parameter_array)
                 
                 for t in range(timesteps):
                     tree = pop.get_tree()
                     pop.update_positions(tree, env, predator)
+                    pop.calculate_order_parameters()
+
                     predator.update_predator(tree, pop)
                     pop.update_all_positions(predator)
-                    #print(pop.all_positions)
-                    #print(pop.population_positions)
-                   
-                    pop.calculate_order_parameters()
+                    
                     data_recorder.update_data(pop, predator, s, i, r, t)
-
+                
             data_recorder.calculate_averages(s, i, samples)
             data_recorder.calculate_errors(s, i, repetitions, samples)
-            Parent.increment_rat(increment_size)  #increment the radius of attraction
-            Parent.increment_ral(increment_size)  #increment the radius of alignment
+            #Parent.increment_rat(increment_size)  #increment the radius of attraction
+            #Parent.increment_ral(increment_size)  #increment the radius of alignment
 
         Parent.rat = starting_rat
         #Parent.increment_rat(increment_size*(n+1))
         Parent.ral = starting_ral
-        Parent.speed += 0.4
+       # Parent.speed += 0.5
         #Population.steering_error += 0.05
         #Parent.perception_angle -= np.deg2rad(30)
         #Parent.maximal_turning_angle += np.deg2rad(10)
+        #Parent.evasion_angle += np.deg2rad(5)
+        Population.selfish += 1/strips
 
 start_time = time.time()
 run_model()
@@ -78,7 +85,7 @@ print(f"Execution time: {execution_time} seconds")
 
 finishing_ral = np.round(data_recorder.get_polarisation_data()[-1][-1][-1][1][-2], 1)
 finishing_rat = np.round(data_recorder.get_polarisation_data()[-1][-1][-1][1][-1], 1)
-finishing_speed = Parent.speed #- 0.5
+finishing_speed = Parent.speed - 1.2
 
 ## Save data
 if save_data:
@@ -120,4 +127,4 @@ if save_data:
     np.save(f'{new_folder_path}/polarisation_errors', data_recorder.get_polarisation_errors())
     np.save(f'{new_folder_path}/predator_positions', data_recorder.get_predator_positions())
     np.save(f'{new_folder_path}/predator_directions', data_recorder.get_predator_directions())
-
+    np.save(f'{new_folder_path}/predator_prey_distances', data_recorder.get_predator_prey_distances())

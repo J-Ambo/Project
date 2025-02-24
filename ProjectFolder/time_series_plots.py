@@ -9,12 +9,14 @@ import shutil
 plots_on = True
 save_plots = True
 
-data_path = r"C:\Users\44771\Desktop\Data\1701\1701_1022"
+data_path = r"C:\Users\44771\Desktop\Data\2002\2002_1712"
 data_file_name1 = os.path.split(data_path)[1]
 data_file_name2 = os.path.split(os.path.split(data_path)[0])[1]
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
 rotation_data = np.load(f'{data_path}/rotation_data.npy', allow_pickle=True)
+#print([rotation_data[0][0][:,0][i][-1] for i in range(100)])
+#print(len(rotation_data[0][0][:,0]))
 
 Population_size, Arena_radius, Timesteps, Repetitions, Increments, Strips = (polarisation_data[0][0][0][1][0], polarisation_data[0][0][0][1][1],
                                                                 polarisation_data[0][0][0][1][2], polarisation_data[0][0][0][1][3], 
@@ -28,6 +30,7 @@ rat_array = [sub_array[-1] for sub_array in polarisation_data[0][:,0][:,1]] #pol
 print(ral_array)
 print(rat_array)
 
+plt.rcParams.update({"text.usetex": True, "font.family": "Times New Roman"})
 time_steps = np.linspace(0, int(Timesteps), int(Timesteps))
 if plots_on:
     time_dm = time.strftime('%d%m')
@@ -39,13 +42,16 @@ if plots_on:
         for i in range(int(Increments)):  #i.e. for i in range(number_of_increments)
             for r in range(int(Repetitions)):
                 fig, ax = plt.subplots(figsize=(5,4))
+                ax.set_xlabel('Timestep', size=22)
+                ax.set_ylabel('$O_\mathrm{p/r}$', size=22)
+                ax.tick_params(labelsize=18)
                 ax.set_ylim(-0.05,1.05)
                 ax.plot(time_steps, polarisation_data[n][i][r][0], label='Polarisation', c='blue')
                 ax.plot(time_steps, rotation_data[n][i][r][0], label='Rotation', c='red')
-                ax.legend()
+                ax.legend(frameon=False, fontsize=18, reverse=True)
                 ral = np.round(ral_array[i],1)
                 rat = np.round(rat_array[i],1) + n*0.5  
-                ax.set_title(f'Rep:{r+1} Pop:{int(Population_size)} ral:{ral} rat:{rat}')
+                #ax.set_title(f'Rep:{r+1} Pop:{int(Population_size)} ral:{ral} rat:{rat}')
 
                 if save_plots:
                     os.makedirs(f'{new_folder_path}/Strip{n+1}', exist_ok=True)

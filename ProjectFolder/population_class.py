@@ -11,11 +11,10 @@ from line_profiler import profile
 
 class Population:
     steering_error = 0.15
-    selfish = False      #are individuals selfish(True) (i.e.only consider escape when threatened, ignore group) or unselfish(False) (i.e. try to maintain group cohesion when threatened as well as escape)
+    selfish = 1      #are individuals selfish(1) (i.e.only consider escape when threatened, ignore group) or unselfish(0) (i.e. try to maintain group cohesion when threatened)
     def __init__(self, population_size, environment, predator):
         self.population_size = population_size
         self.half_perception_angle = Parent.perception_angle / 2
-        self._density_cache = {}
 
         r = np.random.uniform(0, Parent.rat * 1.2, self.population_size)
         phi = np.random.uniform(0, 2*np.pi, self.population_size)
@@ -32,17 +31,23 @@ class Population:
         self.all_positions = np.concatenate((self.population_positions, [predator.position]))   #all positions including the predator
         self.all_directions = np.concatenate((self.population_directions, [predator.direction]))
         #self.all_agents = np.concatenate([self.population_array, [predator]])
+
     
         self.all_repulsion_vectors = None
         self.all_alignment_vectors = None
         self.all_attraction_vectors = None
         self.all_escape_vectors = None
 
+        self.outlier_mask = None
         self.inlier_positions = None
         self.inlier_directions = None
         self.average_school_position = None
         self.polarisation = 0   # Polarisation order parameter
         self.rotation = 0    # Rotation order parameter
+        
+        self.predator_mask = None
+        self.escape_coefficient = np.sin(np.pi/2 * Population.selfish)
+        self.social_coefficient = np.cos(np.pi/2 * Population.selfish)
 
     def get_tree(self):
         tree = KDTree(self.all_positions)
@@ -118,13 +123,14 @@ class Population:
         ux = rotation_axis[0]
         uy = rotation_axis[1]
         uz = rotation_axis[2]
-        c = np.cos(Parent.maximal_turning_angle)      
-        s = np.sin(Parent.maximal_turning_angle)
+        c = np.cos(Parent.evasion_angle)      
+        s = np.sin(Parent.evasion_angle)
         t = 1 - c
         rotation_matrix = np.array([[c + ux**2 * t, ux * uy * t - uz * s, ux * uz * t + uy * s],
                                     [uy * ux * t + uz * s, c + uy**2 * t, uy * uz * t - ux * s],
                                     [uz * ux * t - uy * s, uz * uy * t + ux * s, c + uz**2 * t]])
         v_e = rotation_matrix @ v
+        v_e /= np.linalg.norm(v_e) + 1e-5
         return v_e
     @profile
     def calculate_all_vectors(self, neighbours, distances, predator):
@@ -132,14 +138,23 @@ class Population:
         self.all_alignment_vectors = np.zeros((self.population_size, 3))
         self.all_attraction_vectors = np.zeros((self.population_size, 3))
         self.all_escape_vectors = np.zeros((self.population_size, 3))
+        self.predator_mask = np.zeros(self.population_size, dtype=bool)
+        self.outlier_mask = np.zeros(self.population_size, dtype=bool)
+
         for index in range(self.population_size):
             index_neighbours = neighbours[index]
             if index_neighbours.size == 0:
                 continue
+            if index_neighbours.size <= 4:
+                self.outlier_mask[index] = True
+
             index_neighbours_distances = distances[index]
             index_position = self.all_positions[index]
 
             predator_mask = index_neighbours == self.population_size
+            self.predator_mask[index] = np.any(predator_mask==True)
+            #if np.any(predator_mask==True):
+             #   print(index, predator_mask)
             index_social_neighbours_distances = distances[index][~predator_mask]
             index_social_neighbours_positions = self.all_positions[index_neighbours][~predator_mask]
             index_social_neighbours_directions = self.all_directions[index_neighbours][~predator_mask]
@@ -155,7 +170,7 @@ class Population:
             if np.any(index_neighbours == self.population_size):
                 predator_distance = index_neighbours_distances[-1]
                 self.all_escape_vectors[index] = self.escape_vector(index_position, predator_distance, predator)
-   
+
     def calculate_target_directions(self, tree, predator):
         neighbours_distances = self.find_neighbours(tree)
         neighbours = neighbours_distances[0]
@@ -164,28 +179,32 @@ class Population:
         self.calculate_all_vectors(neighbours, distances, predator)
 
         sum_of_social_vectors = self.all_repulsion_vectors + self.all_alignment_vectors + self.all_attraction_vectors
-        sum_of_social_vectors /= np.linalg.norm(sum_of_social_vectors)
+        sum_of_social_vectors /= (np.linalg.norm(sum_of_social_vectors, axis=1)[:, np.newaxis] + 1e-10)
 
-        sum_of_all_vectors = 0.5*sum_of_social_vectors + 1.5*self.all_escape_vectors                     #np.sum((repulsion_vectors, alignment_vectors, attraction_vectors, 10*escape_vectors), axis=0)
+        all_escape_coefficients = np.ones(self.population_size) * (self.escape_coefficient * self.predator_mask + ~self.predator_mask)
+        all_social_coefficients = np.ones(self.population_size) * (self.social_coefficient * self.predator_mask + ~self.predator_mask)
+        
+        sum_of_all_vectors = all_social_coefficients[:, np.newaxis] * sum_of_social_vectors + all_escape_coefficients[:, np.newaxis] * self.all_escape_vectors                     #np.sum((repulsion_vectors, alignment_vectors, attraction_vectors, 10*escape_vectors), axis=0)
+        
         mask_zero = np.all(sum_of_all_vectors < 1e-4, axis=1)
-
         target_directions = np.where(mask_zero[:, np.newaxis], self.population_directions, sum_of_all_vectors)
-        np.divide(target_directions, np.linalg.norm(target_directions, axis=1, keepdims=True),out=target_directions)
         return target_directions
     
     def calculate_new_directions(self, tree, environment, predator):
         target_directions = self.calculate_target_directions(tree, predator)
         
         # Calculate angles to target directions
-        dot_products = np.einsum('ij, ij->i',self.population_directions, target_directions, optimize=True)
-        angles_to_target_directions = np.arccos(np.clip(dot_products, -1.0, 1.0))
+        dot_products = np.einsum('ij, ij->i', self.population_directions, target_directions, optimize=True)
+        dot_products = np.where(dot_products > 1, 1, dot_products)
+        dot_products = np.where(dot_products < -1, -1, dot_products)
+        angles_to_target_directions = np.arccos(dot_products)
 
         # Update directions based on maximal turning angle
-        mask = angles_to_target_directions < Parent.maximal_turning_angle
+        mask = angles_to_target_directions <= Parent.maximal_turning_angle
 
         cross_products = np.cross(self.population_directions, target_directions)
         cross_norms = np.linalg.norm(cross_products, axis=1)
-        
+
         # Handle cases where directions are equal (cross product is zero)
         cross_products = np.where(cross_norms[:, np.newaxis] > 1e-10, cross_products, self.population_directions)
         cross_norms = np.where(cross_norms > 1e-10, cross_norms, 1.0)
@@ -225,8 +244,7 @@ class Population:
         self.calculate_average_inlier_position()
 
         self.population_positions += self.population_speeds[:, np.newaxis] * self.population_directions
-        self.population_positions = np.round(self.population_positions, 4)
-        
+        self.population_positions = np.round(self.population_positions, 4)     
 
     def update_all_positions(self, predator):
         if not hasattr(self, '_all_positions'):
@@ -242,7 +260,7 @@ class Population:
         self.all_directions = self._all_directions
 
     def remove_outliers(self):
-        lof = LocalOutlierFactor(n_neighbors=10, algorithm='kd_tree', contamination='auto')
+        lof = LocalOutlierFactor(n_neighbors=int(0.8*self.population_size), algorithm='kd_tree', contamination='auto')
         outlier_mask = lof.fit_predict(self.population_positions) == -1
         
         if not np.any(outlier_mask):
@@ -259,7 +277,6 @@ class Population:
     def calculate_order_parameters(self):
         # Calculate average position to each agent
         school_size = len(self.inlier_positions)
-        #print("N outliers:", self.population_size - school_size)
 
         average_position_to_agents = self.inlier_positions - self.average_school_position
         average_position_to_agents /= (np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis])
