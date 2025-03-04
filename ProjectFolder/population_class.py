@@ -3,13 +3,11 @@ import numpy.ma as ma
 import random
 from sklearn.neighbors import KDTree, LocalOutlierFactor
 from parent_class import Parent
-from prey_class import Prey
-from environment_class import Environment
-from predator_class import Predator
+
 
 from line_profiler import profile
 
-class Population:
+class Population(Parent):
     steering_error = 0.15
     selfish = 1      #are individuals selfish(1) (i.e.only consider escape when threatened, ignore group) or unselfish(0) (i.e. try to maintain group cohesion when threatened)
     def __init__(self, population_size, environment, predator):
@@ -23,15 +21,13 @@ class Population:
         z = r * np.cos(theta)
         x = r * np.cos(phi)*np.sin(theta)
         y = r * np.sin(phi)*np.sin(theta)
-        self.population_array = np.array([Prey(x=x[n], y=y[n], z=z[n], dimensions=environment.dimension) for n in range(self.population_size)], dtype=object)
+        self.population_array = np.array([Parent(x=x[n], y=y[n], z=z[n]) for n in range(self.population_size)], dtype=object)
         self.population_positions = np.array([agent.position for agent in self.population_array])
         self.population_directions = np.array([agent.direction for agent in self.population_array])
         self.population_speeds = np.array([agent.speed for agent in self.population_array])
             
         self.all_positions = np.concatenate((self.population_positions, [predator.position]))   #all positions including the predator
         self.all_directions = np.concatenate((self.population_directions, [predator.direction]))
-        #self.all_agents = np.concatenate([self.population_array, [predator]])
-
     
         self.all_repulsion_vectors = None
         self.all_alignment_vectors = None
@@ -67,22 +63,24 @@ class Population:
         directions_to_neighbours = (neighbour_positions - focus_position)
         np.divide(directions_to_neighbours, distances_ex_self[:,np.newaxis], out=directions_to_neighbours)
 
-        dot_products = np.dot(directions_to_neighbours, self.population_directions[index])
+        dot_products = np.dot(directions_to_neighbours, self.all_directions[index])
         dot_products = np.round(dot_products, 3)
 
+       # print(dot_products)
         angles_to_neighbours = np.arccos(dot_products)
+       # print(angles_to_neighbours)
 
         mask = angles_to_neighbours <= self.half_perception_angle
         visible_indices = indices_ex_self[mask]
         visible_distances = distances_ex_self[mask]
         return visible_indices, visible_distances
     
-    def find_neighbours(self, tree):
-        rat_neighbours = tree.query_radius(self.population_positions, Parent.rat, return_distance=True)
+    def find_neighbours(self, tree, positions):
+        rat_neighbours = tree.query_radius(positions, __class__.rat, return_distance=True)
         neighbour_indices = rat_neighbours[0]
         neighbour_distances = rat_neighbours[1]
         # Remove hidden indices for each agent
-        for index in range(self.population_size):
+        for index in range(len(positions)):
             neighbour_indices[index], neighbour_distances[index] = self.remove_hidden_indices(index, neighbour_indices[index], neighbour_distances[index])
     
         return neighbour_indices, neighbour_distances
@@ -130,7 +128,6 @@ class Population:
                                     [uy * ux * t + uz * s, c + uy**2 * t, uy * uz * t - ux * s],
                                     [uz * ux * t - uy * s, uz * uy * t + ux * s, c + uz**2 * t]])
         v_e = rotation_matrix @ v
-        v_e /= np.linalg.norm(v_e) + 1e-5
         return v_e
     @profile
     def calculate_all_vectors(self, neighbours, distances, predator):
@@ -172,8 +169,9 @@ class Population:
                 self.all_escape_vectors[index] = self.escape_vector(index_position, predator_distance, predator)
 
     def calculate_target_directions(self, tree, predator):
-        neighbours_distances = self.find_neighbours(tree)
+        neighbours_distances = self.find_neighbours(tree, self.population_positions)
         neighbours = neighbours_distances[0]
+        #print(neighbours)
         distances = neighbours_distances[1]
 
         self.calculate_all_vectors(neighbours, distances, predator)

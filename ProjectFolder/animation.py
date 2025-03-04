@@ -2,6 +2,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 import shutil
+from sklearn.neighbors import LocalOutlierFactor
+
 '''Plotting the polarisation and rotation data for each repetition.
 
    Also provides an alternative method to matplotlib.animation.FuncAnimation for creating
@@ -9,7 +11,7 @@ import shutil
 '''
 animation_on = True
 
-data_path = r"C:\Users\44771\Desktop\Data\1901\1901_1551"
+data_path = r"C:\Users\44771\Desktop\Data\0403\0403_1119"
 data_file_name = os.path.split(data_path)[1]
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
@@ -24,11 +26,13 @@ Population_size, Arena_radius, Timesteps, Repetitions, Increments, Strips = (pol
 s = 0
 i = 0
 r = 0
-print(predator_positions[s][i][r][0][0][1])
+
+
 # Animation
 if animation_on:
 
     fig, ax1 = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(7, 7))
+    ax1.view_init(90, 45)
     ax1.set_xlim3d(-Arena_radius*1.01, Arena_radius*1.01)
     ax1.set_ylim3d(-Arena_radius*1.01, Arena_radius*1.01)
     ax1.set_zlim3d(-Arena_radius*1.01, Arena_radius*1.01)
@@ -37,6 +41,8 @@ if animation_on:
     ax1.set_zlabel('Z')
 
     x_positions = np.array([pos[0] for pos in position_data[s][i][r][0]])
+    print(x_positions)
+    print(np.array([pos[0] for pos in position_data[s][i][r][1]]))
     y_positions = np.array([pos[1] for pos in position_data[s][i][r][0]])
     z_positions = np.array([pos[2] for pos in position_data[s][i][r][0]])
     scatter3D = ax1.scatter(x_positions,
@@ -60,15 +66,15 @@ if animation_on:
     yzscatter = ax1.scatter(np.full(int(Population_size),-Arena_radius), 
                             np.array([pos[1] for pos in position_data[s][i][r][0]]), 
                             np.array([pos[2] for pos in position_data[s][i][r][0]]), 
-                        zdir='x', s=10, c='gray', alpha=0.4)
+                            zdir='x', s=10, c='gray', alpha=0.4)
 
     for t in range(int(Timesteps)):
         scatter3D._offsets3d = (np.array([pos[0] for pos in position_data[s][i][r][t]]),
-                    np.array([pos[1] for pos in position_data[s][i][r][t]]), 
-                    np.array([pos[2] for pos in position_data[s][i][r][t]]))
+                                np.array([pos[1] for pos in position_data[s][i][r][t]]), 
+                                np.array([pos[2] for pos in position_data[s][i][r][t]]))
         predator_scatter._offsets3d = (np.array([predator_positions[s][i][r][t][0][0]]),
-                           np.array([predator_positions[s][i][r][t][0][1]]), 
-                           np.array([predator_positions[s][i][r][t][0][2]]))
+                                        np.array([predator_positions[s][i][r][t][0][1]]), 
+                                        np.array([predator_positions[s][i][r][t][0][2]]))
         xyscatter._offsets3d = (np.array([pos[0] for pos in position_data[s][i][r][t]]), 
                                 np.array([pos[1] for pos in position_data[s][i][r][t]]),
                                 np.full(int(Population_size),-Arena_radius))
@@ -82,5 +88,5 @@ if animation_on:
 
         #plt.savefig(f'C:/Users/44771/Desktop/GifImages/Rep{n+1}Time{t}.png')
         
-        plt.pause(0.001)
+        plt.pause(0.1)
 
