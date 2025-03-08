@@ -17,6 +17,8 @@ class Predator(Parent):
         self.skip = False
         self.fov = np.deg2rad(90)
         self.previous_neighbours = np.array([])
+        self.previous_targets = np.array([])
+        self.attack_number = 0
 
     def find_neighbours(self, tree, population):
         neighbours, distances = tree.query_radius([self.position], 8, return_distance=True)
@@ -29,7 +31,7 @@ class Predator(Parent):
             #print('early exit')
             return np.array([]), np.array([])
         
-        neighbour_positions = population.all_positions[neighbours]
+        neighbour_positions = population.population_positions[neighbours]
         directions_to_neighbours = (neighbour_positions - self.position)
         np.divide(directions_to_neighbours, distances[:,np.newaxis], out=directions_to_neighbours)
 
@@ -57,34 +59,27 @@ class Predator(Parent):
    
     def fnc(self, tree, population):
         neighbours_indices, distances = self.find_neighbours(tree, population)
-        
-        self.previous_neighbours = neighbours_indices
 
-        msk = distances<1
-       # print(msk, neighbours_indices, neighbours_indices[msk])
-
-        
-        #distances_to_prey = np.linalg.norm(neighbours_positions - self.position, axis=1)
-       # print('distances', distances)
+        msk = distances<3
+        targets = neighbours_indices[msk]
+    
         if neighbours_indices.size == 0:
             self.minimum_distance_to_prey = None
-
         else:
             self.minimum_distance_to_prey = min(distances)
+            
+        if targets.size != 0:
+            target_mask = distances[msk] == min(distances[msk])
+            self.attack_number += 1
+           # print(targets)
+           # print('PREVIOUS',self.previous_targets, 'CURRENT', targets, 'SAME',list(set(targets).intersection(self.previous_targets)))
+          #  print(distances[msk], target_mask, targets[target_mask] )
+           # population.population_positions = np.delete(population.population_positions, targets[target_mask], axis=0)
+            
+        #print('LEN POP', population.population_positions.shape)
 
-        if neighbours_indices.size != 0:
-            print('PREVIOUS',self.previous_neighbours, 'CURRENT', neighbours_indices)
-            print('SAME',list(set(neighbours_indices).intersection(self.previous_neighbours)))
-
-        #predator_school_vectors = (neighbours_positions - self.position) / distances_to_prey[:,np.newaxis]
-        #dot_products = np.dot(predator_school_vectors, self.direction)
-       
-        #if np.any(dot_products < 0) and (self.infront == True) and not np.all(dot_products < 0):
-         #   self.minimum_distance_to_prey = min(distances_to_prey)
-
-        #elif np.all(dot_products < 0) or self.infront == False:
-         #   self.infront = False
-          #  self.minimum_distance_to_prey = None
+        self.previous_neighbours = neighbours_indices
+        self.previous_targets = targets
 
     def update_predator(self, tree, population):
         self.fnc(tree, population)
@@ -93,3 +88,6 @@ class Predator(Parent):
             self.position += self.fixed_direction * self.speed
         else:
             self.position += self.direction * self.speed
+
+        population.population_positions[-1] = self.position
+        population.population_directions[-1] = self.direction

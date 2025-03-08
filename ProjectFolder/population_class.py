@@ -8,7 +8,7 @@ from parent_class import Parent
 from line_profiler import profile
 
 class Population(Parent):
-    steering_error = 0.15
+    steering_error = None
     selfish = 1      #are individuals selfish(1) (i.e.only consider escape when threatened, ignore group) or unselfish(0) (i.e. try to maintain group cohesion when threatened)
     def __init__(self, population_size, environment, predator):
         self.population_size = population_size
@@ -22,12 +22,12 @@ class Population(Parent):
         x = r * np.cos(phi)*np.sin(theta)
         y = r * np.sin(phi)*np.sin(theta)
         self.population_array = np.array([Parent(x=x[n], y=y[n], z=z[n]) for n in range(self.population_size)], dtype=object)
-        self.population_positions = np.array([agent.position for agent in self.population_array])
-        self.population_directions = np.array([agent.direction for agent in self.population_array])
+        self.population_positions = np.concatenate([np.array([agent.position for agent in self.population_array]), [predator.position]])
+        self.population_directions = np.concatenate([np.array([agent.direction for agent in self.population_array]), [predator.direction]])
         self.population_speeds = np.array([agent.speed for agent in self.population_array])
             
-        self.all_positions = np.concatenate((self.population_positions, [predator.position]))   #all positions including the predator
-        self.all_directions = np.concatenate((self.population_directions, [predator.direction]))
+       # self.all_positions = np.concatenate((self.population_positions, [predator.position]))   #all positions including the predator
+       # self.all_directions = np.concatenate((self.population_directions, [predator.direction]))
     
         self.all_repulsion_vectors = None
         self.all_alignment_vectors = None
@@ -46,7 +46,8 @@ class Population(Parent):
         self.social_coefficient = np.cos(np.pi/2 * Population.selfish)
 
     def get_tree(self):
-        tree = KDTree(self.all_positions)
+       # print('ALL', self.population_positions)
+        tree = KDTree(self.population_positions)
         return tree
 
     # Remove neighbours which are within the blind volume. 
@@ -57,13 +58,13 @@ class Population(Parent):
         if indices_ex_self.size == 0:
             return indices_ex_self, np.array([], dtype=bool)    #ensures an early exit of the function for agents with no neighbours
         
-        neighbour_positions = self.all_positions[indices_ex_self]
-        focus_position = self.all_positions[index]
+        neighbour_positions = self.population_positions[indices_ex_self]
+        focus_position = self.population_positions[index]
 
         directions_to_neighbours = (neighbour_positions - focus_position)
         np.divide(directions_to_neighbours, distances_ex_self[:,np.newaxis], out=directions_to_neighbours)
 
-        dot_products = np.dot(directions_to_neighbours, self.all_directions[index])
+        dot_products = np.dot(directions_to_neighbours, self.population_directions[index])
         dot_products = np.round(dot_products, 3)
 
        # print(dot_products)
@@ -87,7 +88,7 @@ class Population(Parent):
     
     def calculate_wall_vectors(self, environment, distances_from_origin):
         all_wall_vectors = np.zeros((self.population_size, 3))
-        all_wall_vectors = np.where(distances_from_origin[:, np.newaxis] >= environment.radius, -self.population_positions, all_wall_vectors)
+        all_wall_vectors = np.where(distances_from_origin[:, np.newaxis] >= environment.radius, -self.population_positions[:-1], all_wall_vectors)
         '''for index in range(self.population_size):
             position = self.population_positions[index]
             distance_from_origin = np.linalg.norm(position)
@@ -141,20 +142,22 @@ class Population(Parent):
         for index in range(self.population_size):
             index_neighbours = neighbours[index]
             if index_neighbours.size == 0:
+                #print(index_neighbours, self.outlier_mask[0])
+                self.outlier_mask[index] = True
                 continue
             if index_neighbours.size <= 4:
                 self.outlier_mask[index] = True
 
             index_neighbours_distances = distances[index]
-            index_position = self.all_positions[index]
+            index_position = self.population_positions[index]
 
             predator_mask = index_neighbours == self.population_size
             self.predator_mask[index] = np.any(predator_mask==True)
             #if np.any(predator_mask==True):
              #   print(index, predator_mask)
             index_social_neighbours_distances = distances[index][~predator_mask]
-            index_social_neighbours_positions = self.all_positions[index_neighbours][~predator_mask]
-            index_social_neighbours_directions = self.all_directions[index_neighbours][~predator_mask]
+            index_social_neighbours_positions = self.population_positions[index_neighbours][~predator_mask]
+            index_social_neighbours_directions = self.population_directions[index_neighbours][~predator_mask]
 
             repulsion_zone_mask = (index_social_neighbours_distances > 0) & (index_social_neighbours_distances < Parent.rr)
             alignment_zone_mask = (index_social_neighbours_distances > Parent.rr) & (index_social_neighbours_distances < Parent.ral)
@@ -169,7 +172,7 @@ class Population(Parent):
                 self.all_escape_vectors[index] = self.escape_vector(index_position, predator_distance, predator)
 
     def calculate_target_directions(self, tree, predator):
-        neighbours_distances = self.find_neighbours(tree, self.population_positions)
+        neighbours_distances = self.find_neighbours(tree, self.population_positions[:-1])
         neighbours = neighbours_distances[0]
         #print(neighbours)
         distances = neighbours_distances[1]
@@ -185,14 +188,14 @@ class Population(Parent):
         sum_of_all_vectors = all_social_coefficients[:, np.newaxis] * sum_of_social_vectors + all_escape_coefficients[:, np.newaxis] * self.all_escape_vectors                     #np.sum((repulsion_vectors, alignment_vectors, attraction_vectors, 10*escape_vectors), axis=0)
         
         mask_zero = np.all(sum_of_all_vectors < 1e-4, axis=1)
-        target_directions = np.where(mask_zero[:, np.newaxis], self.population_directions, sum_of_all_vectors)
+        target_directions = np.where(mask_zero[:, np.newaxis], self.population_directions[:-1], sum_of_all_vectors)
         return target_directions
     
     def calculate_new_directions(self, tree, environment, predator):
         target_directions = self.calculate_target_directions(tree, predator)
         
         # Calculate angles to target directions
-        dot_products = np.einsum('ij, ij->i', self.population_directions, target_directions, optimize=True)
+        dot_products = np.einsum('ij, ij->i', self.population_directions[:-1], target_directions, optimize=True)
         dot_products = np.where(dot_products > 1, 1, dot_products)
         dot_products = np.where(dot_products < -1, -1, dot_products)
         angles_to_target_directions = np.arccos(dot_products)
@@ -200,11 +203,11 @@ class Population(Parent):
         # Update directions based on maximal turning angle
         mask = angles_to_target_directions <= Parent.maximal_turning_angle
 
-        cross_products = np.cross(self.population_directions, target_directions)
+        cross_products = np.cross(self.population_directions[:-1], target_directions)
         cross_norms = np.linalg.norm(cross_products, axis=1)
 
         # Handle cases where directions are equal (cross product is zero)
-        cross_products = np.where(cross_norms[:, np.newaxis] > 1e-10, cross_products, self.population_directions)
+        cross_products = np.where(cross_norms[:, np.newaxis] > 1e-10, cross_products, self.population_directions[:-1])
         cross_norms = np.where(cross_norms > 1e-10, cross_norms, 1.0)
 
         cross_products /= cross_norms[:, np.newaxis]
@@ -221,45 +224,33 @@ class Population(Parent):
             [uy * ux * t + uz * s, c + uy**2 * t, uy * uz * t - ux * s],
             [uz * ux * t - uy * s, uz * uy * t + ux * s, c + uz**2 * t]]).transpose(2, 0, 1)
         
-        maximal_directions = np.einsum('ijk,ik->ij', rotation_matrices, self.population_directions)
+        maximal_directions = np.einsum('ijk,ik->ij', rotation_matrices, self.population_directions[:-1])
 
-        distances_from_origin = np.linalg.norm(self.population_positions, axis=1)
+        distances_from_origin = np.linalg.norm(self.population_positions[:-1], axis=1)
         boundary_mask = distances_from_origin >= environment.radius
-        self.population_directions[~boundary_mask] = np.where(mask[:, np.newaxis][~boundary_mask], target_directions[~boundary_mask], maximal_directions[~boundary_mask])
+        self.population_directions[:-1][~boundary_mask] = np.where(mask[:, np.newaxis][~boundary_mask], target_directions[~boundary_mask], maximal_directions[~boundary_mask])
         if np.any(boundary_mask):
             boundary_vectors = self.calculate_wall_vectors(environment, distances_from_origin)
             boundary_vectors[boundary_mask] /= np.linalg.norm(boundary_vectors[boundary_mask], axis=1)[:, np.newaxis]
-            self.population_directions[boundary_mask] = boundary_vectors[boundary_mask]
+            self.population_directions[:-1][boundary_mask] = boundary_vectors[boundary_mask]
 
         errors = np.random.normal(0, __class__.steering_error, (self.population_size, 3))
-        self.population_directions += errors
+        self.population_directions[:-1] += errors
 
-        self.population_directions /= np.linalg.norm(self.population_directions, axis=1)[:, np.newaxis]
-        self.population_directions = np.round(self.population_directions, 4)
+        self.population_directions[:-1] /= np.linalg.norm(self.population_directions[:-1], axis=1)[:, np.newaxis]
+        self.population_directions[:-1] = np.round(self.population_directions[:-1], 4)
 
     def update_positions(self, tree, environment, predator):
         self.calculate_new_directions(tree, environment, predator)
         self.calculate_average_inlier_position()
 
-        self.population_positions += self.population_speeds[:, np.newaxis] * self.population_directions
-        self.population_positions = np.round(self.population_positions, 4)     
-
-    def update_all_positions(self, predator):
-        if not hasattr(self, '_all_positions'):
-            self._all_positions = np.zeros((self.population_size + 1, 3))
-        self._all_positions[:-1] = self.population_positions
-        self._all_positions[-1] = predator.position
-        self.all_positions = self._all_positions
-        
-        if not hasattr(self, '_all_directions'):
-            self._all_directions = np.zeros((self.population_size + 1, 3))
-        self._all_directions[:-1] = self.population_directions
-        self._all_directions[-1] = predator.direction
-        self.all_directions = self._all_directions
+        self.population_positions[:-1] += self.population_speeds[:, np.newaxis] * self.population_directions[:-1]
+        self.population_positions[:-1] = np.round(self.population_positions[:-1], 4)     
 
     def remove_outliers(self):
         lof = LocalOutlierFactor(n_neighbors=int(0.8*self.population_size), algorithm='kd_tree', contamination='auto')
         outlier_mask = lof.fit_predict(self.population_positions) == -1
+       # print(outlier_mask == self.outlier_mask)
         
         if not np.any(outlier_mask):
             return self.population_positions, self.population_directions
@@ -275,6 +266,7 @@ class Population(Parent):
     def calculate_order_parameters(self):
         # Calculate average position to each agent
         school_size = len(self.inlier_positions)
+      #  print(self.population_size-school_size)
 
         average_position_to_agents = self.inlier_positions - self.average_school_position
         average_position_to_agents /= (np.linalg.norm(average_position_to_agents, axis=1)[:, np.newaxis])
@@ -282,14 +274,10 @@ class Population(Parent):
         # Calculate order parameters
         sum_of_directions = np.sum(self.inlier_directions, axis=0)
         self.polarisation = np.linalg.norm(sum_of_directions) / school_size
-
+        
         angular_momenta = np.cross(average_position_to_agents, self.inlier_directions)
         self.population_angular_momenta = angular_momenta
         sum_of_angular_momenta = np.sum(self.population_angular_momenta, axis=0)
         self.rotation = np.linalg.norm(sum_of_angular_momenta) / school_size
-
-
-
-
-
+      #  print(self.polarisation, self.rotation)
 

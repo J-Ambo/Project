@@ -9,6 +9,7 @@ class DataRecorder:
         self.predator_position_data = np.zeros((strips, increments, repetitions, time, 1, dimensions))
         self.predator_direction_data = np.zeros((strips, increments, repetitions, time, 1, dimensions))
         self.predator_prey_distances = np.zeros((strips, increments, repetitions, time))
+        self.predator_attack_number = np.zeros((strips, increments, repetitions, time))
 
         self.polarisation_data = self.initialize_data(strips, increments, repetitions, time)
         self.rotation_data = self.initialize_data(strips, increments, repetitions, time)
@@ -25,12 +26,13 @@ class DataRecorder:
         self.rotation_data[strip][increment][repetition][1] = parameters
 
     def update_data(self, population, predator, strip, increment, repetition, time_step):
-        self.position_data[strip, increment, repetition, time_step, :] = population.population_positions
-        self.direction_data[strip, increment, repetition, time_step, :] = population.population_directions
+        self.position_data[strip, increment, repetition, time_step, :] = population.population_positions[:-1]
+        self.direction_data[strip, increment, repetition, time_step, :] = population.population_directions[:-1]
 
         self.predator_position_data[strip, increment, repetition, time_step, :] = predator.position
         self.predator_direction_data[strip, increment, repetition, time_step, :] = predator.direction
         self.predator_prey_distances[strip, increment, repetition, time_step] = predator.minimum_distance_to_prey
+        self.predator_attack_number[strip, increment, repetition, time_step] = predator.attack_number
 
         self.polarisation_data[strip][increment][repetition][0][time_step] = population.polarisation
         self.rotation_data[strip][increment][repetition][0][time_step] = population.rotation
@@ -89,6 +91,10 @@ class DataRecorder:
     
     def get_predator_prey_distances(self):
         return self.predator_prey_distances
+    
+    def get_predator_attack_number(self):
+        return self.predator_attack_number
+    
 #data = DataRecorder(5, 3, 10, 4, 2, 3)
 
 '''print(f"All: \n{data.get_polarisation_data()}")
