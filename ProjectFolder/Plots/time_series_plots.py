@@ -9,7 +9,7 @@ import shutil
 plots_on = True
 save_plots = True
 
-data_path = r"C:\Users\44771\Desktop\Data\2002\2002_1712"
+data_path = r"C:\Users\44771\Desktop\Data\0903\0903_1658"
 data_file_name1 = os.path.split(data_path)[1]
 data_file_name2 = os.path.split(os.path.split(data_path)[0])[1]
 

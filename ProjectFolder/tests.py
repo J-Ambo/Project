@@ -2,17 +2,23 @@
 ##     Tests                          ##
 ########################################
 
-from environment_class import Environment
-from population_class import Population
-from parent_class import Parent
+from AgentClasses.environment_class import Environment
+from AgentClasses.population_class import Population
+from AgentClasses.parent_class import Parent
 import numpy as np
 from sklearn.neighbors import KDTree
 from matplotlib.animation import FuncAnimation
-from predator_class import Predator
+from AgentClasses.predator_class import Predator
 
+a= np.array([[1,2]])
+b= np.array([[3,2]])
+c = np.array([[0,0], [1,1], [100,4]])
+c[:-1] += np.array([2,2])
+print(c)
+#print(np.concatenate([a, b], axis=0))
 test_prints = False
 env = Environment(10, 3)
-predator = Predator(0,0,-200, 3)
+predator = Predator(0,0,-200)
 pop = Population(50, env, predator)
 indices_array = np.arange(10)
 select = np.array([1,2,5,7])
@@ -441,3 +447,4 @@ a = np.array([[1,2], [2,3], [1,1]])
 b = np.array([1,2])
 #print(b.shape, a.shape)
 #print(np.dot(a, b))
+print(a+b)

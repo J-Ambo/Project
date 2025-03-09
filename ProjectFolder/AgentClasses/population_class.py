@@ -2,7 +2,7 @@ import numpy as np
 import numpy.ma as ma
 import random
 from sklearn.neighbors import KDTree, LocalOutlierFactor
-from parent_class import Parent
+from AgentClasses.parent_class import Parent
 
 
 from line_profiler import profile
@@ -25,9 +25,7 @@ class Population(Parent):
         self.population_positions = np.concatenate([np.array([agent.position for agent in self.population_array]), [predator.position]])
         self.population_directions = np.concatenate([np.array([agent.direction for agent in self.population_array]), [predator.direction]])
         self.population_speeds = np.array([agent.speed for agent in self.population_array])
-            
-       # self.all_positions = np.concatenate((self.population_positions, [predator.position]))   #all positions including the predator
-       # self.all_directions = np.concatenate((self.population_directions, [predator.direction]))
+        self.population_densities = np.zeros(population_size)
     
         self.all_repulsion_vectors = None
         self.all_alignment_vectors = None
@@ -49,7 +47,6 @@ class Population(Parent):
        # print('ALL', self.population_positions)
         tree = KDTree(self.population_positions)
         return tree
-
     # Remove neighbours which are within the blind volume. 
     def remove_hidden_indices(self, index, indices, distances):
         self_mask = (distances != 0)
@@ -86,6 +83,11 @@ class Population(Parent):
     
         return neighbour_indices, neighbour_distances
     
+    def calculate_local_density(self, neighbours_indices):
+        density = len(neighbours_indices) / (4/3*np.pi*__class__.rat**3)
+        #print(len(neighbours_indices), density)
+        return density
+
     def calculate_wall_vectors(self, environment, distances_from_origin):
         all_wall_vectors = np.zeros((self.population_size, 3))
         all_wall_vectors = np.where(distances_from_origin[:, np.newaxis] >= environment.radius, -self.population_positions[:-1], all_wall_vectors)
@@ -101,21 +103,21 @@ class Population(Parent):
                 
         return all_wall_vectors
 
-    def repulsion_vector(self, focus_position, neighbour_positions, neighbour_distances):
+    def calculate_repulsion_vector(self, focus_position, neighbour_positions, neighbour_distances):
         vs = -(neighbour_positions - focus_position) / neighbour_distances[:, np.newaxis]
         v_r = np.sum(vs, axis=0)
         return v_r
 
-    def alignment_vector(self, neighbour_directions):
+    def calculate_alignment_vector(self, neighbour_directions):
         v_al = np.sum(neighbour_directions, axis=0)
         return v_al
 
-    def attraction_vector(self, focus_position, neighbour_positions, neighbour_distances):
+    def calculate_attraction_vector(self, focus_position, neighbour_positions, neighbour_distances):
         vs = (neighbour_positions - focus_position) / neighbour_distances[:, np.newaxis]
         v_at = np.sum(vs, axis=0)
         return v_at
 
-    def escape_vector(self, focus_position, predator_distance, predator):
+    def calculate_escape_vector(self, focus_position, predator_distance, predator):
         v = (focus_position - predator.position) / predator_distance
         cross_product = np.cross(v, -predator.direction)
         rotation_axis = cross_product / np.linalg.norm(cross_product)
@@ -139,7 +141,7 @@ class Population(Parent):
         self.predator_mask = np.zeros(self.population_size, dtype=bool)
         self.outlier_mask = np.zeros(self.population_size, dtype=bool)
 
-        for index in range(self.population_size):
+        for index in range(len(self.population_positions[:-1])):
             index_neighbours = neighbours[index]
             if index_neighbours.size == 0:
                 #print(index_neighbours, self.outlier_mask[0])
@@ -151,10 +153,9 @@ class Population(Parent):
             index_neighbours_distances = distances[index]
             index_position = self.population_positions[index]
 
-            predator_mask = index_neighbours == self.population_size
+            predator_mask = index_neighbours == len(self.population_positions[:-1])  #self.population_size
             self.predator_mask[index] = np.any(predator_mask==True)
-            #if np.any(predator_mask==True):
-             #   print(index, predator_mask)
+
             index_social_neighbours_distances = distances[index][~predator_mask]
             index_social_neighbours_positions = self.population_positions[index_neighbours][~predator_mask]
             index_social_neighbours_directions = self.population_directions[index_neighbours][~predator_mask]
@@ -163,18 +164,19 @@ class Population(Parent):
             alignment_zone_mask = (index_social_neighbours_distances > Parent.rr) & (index_social_neighbours_distances < Parent.ral)
             attraction_zone_mask = (index_social_neighbours_distances > Parent.ral) & (index_social_neighbours_distances < Parent.rat)
 
-            self.all_repulsion_vectors[index] = self.repulsion_vector(index_position, index_social_neighbours_positions[repulsion_zone_mask], index_social_neighbours_distances[repulsion_zone_mask])
-            self.all_alignment_vectors[index] = self.alignment_vector(index_social_neighbours_directions[alignment_zone_mask])
-            self.all_attraction_vectors[index] = self.attraction_vector(index_position, index_social_neighbours_positions[attraction_zone_mask], index_social_neighbours_distances[attraction_zone_mask])
+            self.all_repulsion_vectors[index] = self.calculate_repulsion_vector(index_position, index_social_neighbours_positions[repulsion_zone_mask], index_social_neighbours_distances[repulsion_zone_mask])
+            self.all_alignment_vectors[index] = self.calculate_alignment_vector(index_social_neighbours_directions[alignment_zone_mask])
+            self.all_attraction_vectors[index] = self.calculate_attraction_vector(index_position, index_social_neighbours_positions[attraction_zone_mask], index_social_neighbours_distances[attraction_zone_mask])
 
             if np.any(index_neighbours == self.population_size):
                 predator_distance = index_neighbours_distances[-1]
-                self.all_escape_vectors[index] = self.escape_vector(index_position, predator_distance, predator)
+                self.all_escape_vectors[index] = self.calculate_escape_vector(index_position, predator_distance, predator)
+
+            self.population_densities[index] = self.calculate_local_density(index_neighbours)
 
     def calculate_target_directions(self, tree, predator):
         neighbours_distances = self.find_neighbours(tree, self.population_positions[:-1])
         neighbours = neighbours_distances[0]
-        #print(neighbours)
         distances = neighbours_distances[1]
 
         self.calculate_all_vectors(neighbours, distances, predator)

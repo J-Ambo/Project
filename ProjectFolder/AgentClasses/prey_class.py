@@ -1,8 +1,8 @@
 import numpy as np
 import random
-from parent_class import Parent
-from environment_class import Environment
-from predator_class import Predator
+from AgentClasses.parent_class import Parent
+from AgentClasses.environment_class import Environment
+from AgentClasses.predator_class import Predator
 
 '''This script contains the Prey class, which inherits from the Parent class, and is used to create instances of prey agents.
 Differs from the Predator class in that it has a method to steer away from predators, and update its directionection vector accordingly.

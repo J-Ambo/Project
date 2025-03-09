@@ -1,10 +1,10 @@
 import numpy as np
-from parent_class import Parent
-from parent_class import Parent
-from environment_class import Environment
-from population_class import Population
-from data_class import DataRecorder
-from predator_class import Predator
+from AgentClasses.parent_class import Parent
+from AgentClasses.parent_class import Parent
+from AgentClasses.environment_class import Environment
+from AgentClasses.population_class import Population
+from AgentClasses.data_class import DataRecorder
+from AgentClasses.predator_class import Predator
 import time
 import os
 from line_profiler import profile
@@ -15,9 +15,9 @@ arena_radius = 200
 timesteps = 250
 samples = 2   #number of timesteps to include in the averages(counted from the last timestep)
 dimensions = 3
-repetitions = 30
+repetitions = 1
 increments = 1
-strips = 5
+strips = 1
 increment_size = 0.4
 
 starting_ral = 4    
@@ -30,10 +30,10 @@ Parent.perception_angle = np.deg2rad(270)
 Parent.maximal_turning_angle = np.deg2rad(40)
 Parent.evasion_angle = np.deg2rad(30)
 Parent.speed = starting_speed
-Population.selfish = 0
+Population.selfish = 1
 
 #np.random.seed(42)
-save_data = True
+save_data = False
 predator_on = True
 
 env = Environment(arena_radius, dimensions)
@@ -128,4 +128,6 @@ if save_data:
     np.save(f'{new_folder_path}/predator_directions', data_recorder.get_predator_directions())
     np.save(f'{new_folder_path}/predator_prey_distances', data_recorder.get_predator_prey_distances())
     np.save(f'{new_folder_path}/predator_attack_number', data_recorder.get_predator_attack_number())
+    np.save(f'{new_folder_path}/density_data', data_recorder.get_density_data())
+    
     

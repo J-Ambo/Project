@@ -5,6 +5,7 @@ class DataRecorder:
     def __init__(self, population_size, dimensions, time, repetitions, increments, strips):
         self.position_data = np.zeros((strips, increments, repetitions, time, population_size, dimensions))
         self.direction_data = np.zeros((strips, increments, repetitions, time, population_size, dimensions))
+        self.density_data = np.zeros((strips, increments, repetitions, time, population_size))
 
         self.predator_position_data = np.zeros((strips, increments, repetitions, time, 1, dimensions))
         self.predator_direction_data = np.zeros((strips, increments, repetitions, time, 1, dimensions))
@@ -28,6 +29,7 @@ class DataRecorder:
     def update_data(self, population, predator, strip, increment, repetition, time_step):
         self.position_data[strip, increment, repetition, time_step, :] = population.population_positions[:-1]
         self.direction_data[strip, increment, repetition, time_step, :] = population.population_directions[:-1]
+        self.density_data[strip, increment, repetition, time_step, :] = population.population_densities
 
         self.predator_position_data[strip, increment, repetition, time_step, :] = predator.position
         self.predator_direction_data[strip, increment, repetition, time_step, :] = predator.direction
@@ -95,6 +97,10 @@ class DataRecorder:
     def get_predator_attack_number(self):
         return self.predator_attack_number
     
+    def get_density_data(self):
+        return self.density_data
+    
+
 #data = DataRecorder(5, 3, 10, 4, 2, 3)
 
 '''print(f"All: \n{data.get_polarisation_data()}")

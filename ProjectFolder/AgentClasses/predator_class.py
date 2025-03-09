@@ -1,7 +1,7 @@
 import numpy as np
-from parent_class import Parent
-from environment_class import Environment
-from population_class import Population
+from AgentClasses.parent_class import Parent
+from AgentClasses.environment_class import Environment
+from AgentClasses.population_class import Population
 '''This script contains the Predator class, which inherits from the Parent class, and is used to create instances of predator agents.
 Differs from the Prey class in that it steers towards prey.'''
 
@@ -19,6 +19,7 @@ class Predator(Parent):
         self.previous_neighbours = np.array([])
         self.previous_targets = np.array([])
         self.attack_number = 0
+        self.neighbour_densities = None
 
     def find_neighbours(self, tree, population):
         neighbours, distances = tree.query_radius([self.position], 8, return_distance=True)
@@ -57,6 +58,11 @@ class Predator(Parent):
             self.skip = True
             self.fixed_direction = self.direction
    
+    def calculate_prey_density(self):
+        #density = number_of_neighbours / neighbourhood_volume
+        pass
+
+
     def fnc(self, tree, population):
         neighbours_indices, distances = self.find_neighbours(tree, population)
 
@@ -65,18 +71,22 @@ class Predator(Parent):
     
         if neighbours_indices.size == 0:
             self.minimum_distance_to_prey = None
+            self.neighbour_densities = None
         else:
             self.minimum_distance_to_prey = min(distances)
-            
+            self.neighbour_densities = population.population_densities[neighbours_indices]
+        
+            print(neighbours_indices)
+            print(np.mean(self.neighbour_densities))
+            print(np.mean(population.population_densities))
+        
         if targets.size != 0:
             target_mask = distances[msk] == min(distances[msk])
             self.attack_number += 1
-           # print(targets)
+            print('Targets', targets[target_mask])
            # print('PREVIOUS',self.previous_targets, 'CURRENT', targets, 'SAME',list(set(targets).intersection(self.previous_targets)))
           #  print(distances[msk], target_mask, targets[target_mask] )
            # population.population_positions = np.delete(population.population_positions, targets[target_mask], axis=0)
-            
-        #print('LEN POP', population.population_positions.shape)
 
         self.previous_neighbours = neighbours_indices
         self.previous_targets = targets

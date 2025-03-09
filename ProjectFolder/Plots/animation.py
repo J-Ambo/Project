@@ -11,7 +11,7 @@ from sklearn.neighbors import LocalOutlierFactor
 '''
 animation_on = True
 
-data_path = r"C:\Users\44771\Desktop\Data\0403\0403_1119"
+data_path = r"C:\Users\44771\Desktop\Data\0903\0903_1218"
 data_file_name = os.path.split(data_path)[1]
 
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
@@ -32,7 +32,7 @@ r = 0
 if animation_on:
 
     fig, ax1 = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(7, 7))
-    ax1.view_init(90, 45)
+    ax1.view_init(45, 45)
     ax1.set_xlim3d(-Arena_radius*1.01, Arena_radius*1.01)
     ax1.set_ylim3d(-Arena_radius*1.01, Arena_radius*1.01)
     ax1.set_zlim3d(-Arena_radius*1.01, Arena_radius*1.01)
@@ -41,8 +41,8 @@ if animation_on:
     ax1.set_zlabel('Z')
 
     x_positions = np.array([pos[0] for pos in position_data[s][i][r][0]])
-    print(x_positions)
-    print(np.array([pos[0] for pos in position_data[s][i][r][1]]))
+   # print(x_positions)
+   # print(np.array([pos[0] for pos in position_data[s][i][r][1]]))
     y_positions = np.array([pos[1] for pos in position_data[s][i][r][0]])
     z_positions = np.array([pos[2] for pos in position_data[s][i][r][0]])
     scatter3D = ax1.scatter(x_positions,
