@@ -10,6 +10,7 @@ from line_profiler import profile
 class Population(Parent):
     steering_error = None
     selfish = 1      #are individuals selfish(1) (i.e.only consider escape when threatened, ignore group) or unselfish(0) (i.e. try to maintain group cohesion when threatened)
+    population_size = None
     def __init__(self, population_size, environment, predator):
         self.population_size = population_size
         self.half_perception_angle = Parent.perception_angle / 2
@@ -146,6 +147,7 @@ class Population(Parent):
             if index_neighbours.size == 0:
                 #print(index_neighbours, self.outlier_mask[0])
                 self.outlier_mask[index] = True
+                self.population_densities[index] = np.nan
                 continue
             if index_neighbours.size <= 4:
                 self.outlier_mask[index] = True
