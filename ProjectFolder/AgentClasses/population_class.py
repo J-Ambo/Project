@@ -1,6 +1,4 @@
 import numpy as np 
-import numpy.ma as ma
-import random
 from sklearn.neighbors import KDTree, LocalOutlierFactor
 from AgentClasses.parent_class import Parent
 

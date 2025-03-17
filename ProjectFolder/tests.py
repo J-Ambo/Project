@@ -10,6 +10,15 @@ from sklearn.neighbors import KDTree
 from matplotlib.animation import FuncAnimation
 from AgentClasses.predator_class import Predator
 
+Parent.ral = 2
+Parent.rat = 15
+Population.steering_error = 0.25
+Parent.perception_angle = np.deg2rad(270)
+Parent.maximal_turning_angle = np.deg2rad(40)
+Parent.evasion_angle = np.deg2rad(20)
+Parent.speed = 2
+Population.selfish = 0
+
 a= np.array([[1,2]])
 b= np.array([[3,2]])
 c = np.array([[0,0], [1,1], [100,4]])
@@ -143,74 +152,6 @@ def remove_hidden_indices(index, indices, distances):
     valid_indices = indices[mask]
     return valid_indices, mask
 
-all_vectors = np.empty((pop.population_size, 3))
-#print(f"All conditions: {[(distances > Parent.ral) & (distances < Parent.rat) for distances in all_distances]}")
-for index, distances in enumerate(all_distances):
-    zone_condition = (distances > Parent.ral) & (distances < Parent.rat)
-   ## print(zone_condition)
-    selected_indices = target_indices[index][zone_condition]
-    ##print(selected_indices)
-    #selected_indices = np.where(zone_condition, target_indices[index], 0)
-    #print(selected_indices)
-    #selected_indices = remove_false_zeros(zone_condition, selected_indices)
-   # print(selected_indices)
-    
-    #selected_indices = remove_self_index(index, selected_indices)
-    #print(selected_indices)
-    selected_distances = distances[zone_condition]#np.where(zone_condition, distances, 0)
-    ##print(selected_distances)
-    #selected_distances = selected_distances[selected_distances != 0]
-   # print(selected_distances)
-
-    selected_indices, mask = remove_hidden_indices(index, selected_indices, selected_distances)
-    ##print(selected_indices)
-
-    selected_distances = selected_distances[mask]
-    #print(selected_distances)
-    cjs = pop.population_positions[selected_indices]
-    #print(cjs)
-    pos = pop.population_positions[index]
-    #print(pos)
-    cj_minus_ci = cjs - pos
-    #print(cj_minus_ci)
-    normalised = cj_minus_ci/selected_distances[:,np.newaxis]
-    #print(normalised)
-
-    normalised_sum = np.sum(normalised, axis=0)
-    #print(normalised_sum)
-    all_vectors[index] = -normalised_sum 
-#print(all_vectors)
-#print(pop.population_positions[:, np.newaxis, :])
-
-'''zone_condition = (distances != 0) & (distances < Parent.rat)
-print(zone_condition)
-
-#selected_indices = neighbours[:,zone_condition]#np.where(zone_condition, neighbours, 0)
-selected_indices = [neighbours[i][zone_condition[i]] for i in range(len(neighbours))]
-print(selected_indices)
-
-selected_distances = np.where(zone_condition, distances, 0)
-print(selected_distances)
-
-#selected_indices = np.apply_along_axis(remove_false_zeros, 1, zone_condition, selected_indices)
-#selected_distances = np.apply_along_axis(lambda x: x[x != 0], 1, selected_distances)
-
-def remove_hidden(index):
-    return remove_hidden_indices(index, selected_indices[index], selected_distances[index])
-
-hidden_results = np.array([remove_hidden(index) for index in range(pop.population_size)])
-selected_indices = np.array([result[0] for result in hidden_results])
-masks = np.array([result[1] for result in hidden_results])
-selected_distances = np.array([selected_distances[index][masks[index]] for index in range(pop.population_size)])
-
-cjs = np.array([pop.population_positions[indices] for indices in selected_indices])
-pos = pop.population_positions[:, np.newaxis, :]
-cj_minus_ci = cjs - pos
-normalised = cj_minus_ci / selected_distances[:, :, np.newaxis]
-sum_of_normalised = np.sum(normalised, axis=1)
-
-all_repulsion_vectors = -sum_of_normalised
-print(all_repulsion_vectors)'''
 
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
@@ -263,9 +204,9 @@ data_file_name2 = os.path.split(os.path.split(data_path)[0])[1]
 polarisation_data = np.load(f'{data_path}/polarisation_data.npy', allow_pickle=True)
 rotation_data = np.load(f'{data_path}/rotation_data.npy', allow_pickle=True)
 
-samples=1000
-increments=11
-strips=5
+samples=2
+increments=1
+strips=1
 repetitions = 10
 rotation_errors = np.zeros((strips, increments))
 polarisation_errors = np.zeros((strips, increments))
@@ -339,11 +280,11 @@ data_file_name2 = os.path.split(os.path.split(d_path)[0])[1]
 
 position_data = np.load(f'{d_path}/position_data.npy', allow_pickle=True)
 direction_data = np.load(f'{d_path}/direction_data.npy', allow_pickle=True)
-print(position_data[s][i][r])
+##print(position_data[s][i][r])
 x_positions = position_data[s][i][r][:,:,0]
 y_positions = position_data[s][i][r][:,:,1]
 z_positions = position_data[s][i][r][:,:,2]
-print(x_positions[0], y_positions[0], z_positions[0], position_data[0][0][1][0])
+##print(x_positions[0], y_positions[0], z_positions[0], position_data[0][0][1][0])
 x_directions = direction_data[s][i][r][:,:,0]
 y_directions = direction_data[s][i][r][:,:,1]
 z_directions = direction_data[s][i][r][:,:,2]
@@ -389,7 +330,7 @@ elev = 20
 azim = np.linspace(30,210, 200)
 ax1.view_init(elev, 52)
 
-save_animation = True
+save_animation = False
 if save_animation:
     new_folder_path = f'C:/Users/44771/Desktop/Plots/{data_file_name2}/{data_file_name1}/Frames'
     os.makedirs(new_folder_path, exist_ok=True)
@@ -431,7 +372,7 @@ for t in range(200):
     if save_animation:
         plt.savefig(f'{new_folder_path}/frame_{t}.png', dpi=300)
   
-    plt.pause(0.05)
+   # plt.pause(0.05)
 
 angles = np.linspace(0, 90, 10)
 #print(angles)
@@ -447,4 +388,26 @@ a = np.array([[1,2], [2,3], [1,1]])
 b = np.array([1,2])
 #print(b.shape, a.shape)
 #print(np.dot(a, b))
-print(a+b)
+
+
+from numpy.random import PCG64, Generator
+import time
+
+s = time.perf_counter()
+bit_gen = PCG64()#seed=12345)
+rng = Generator(bit_gen)
+
+integers = rng.integers(0, 2**32 -1, size=10)
+f = time.perf_counter()
+print(f'Finished in {f-s}')
+print(integers)
+
+speeds = np.linspace(0,5, 10)
+zipped = list(zip(speeds, integers))
+args, seed = zip(*zipped)
+print(zipped)
+
+print(os.listdir(r'C:\Users\44771\Documents\Level4Project\ProjectFolder\Plots'))
+for i in os.listdir(r'C:\Users\44771\Documents\Level4Project\ProjectFolder\Plots'):
+     print(i)
+        
