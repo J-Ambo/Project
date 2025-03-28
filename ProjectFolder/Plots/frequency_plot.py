@@ -16,8 +16,8 @@ import shutil
 #d4 = r"C:\Users\44771\Desktop\Data\2801\2801_1846"
 #d5 = r"C:\Users\44771\Desktop\Data\2801\2801_2015"
 
-#d1 = r"C:\Users\44771\Desktop\Data\2202\2202_1436"
-d1 = r"C:\Users\44771\Desktop\Data\2602\2602_0435"
+d1 = r"C:\Users\44771\Desktop\Data\2202\2202_1436"
+#d1 = r"C:\Users\44771\Desktop\Data\1703\1703_0226\V1.0_251540470"
 data_file_name1 = os.path.split(d1)[1]
 data_file_name2 = os.path.split(os.path.split(d1)[0])[1]
 
@@ -45,7 +45,9 @@ def load_data(data_path):
         R_focus_data = [R_data[i][-1] for i in range(N_reps)]
         P_focus_data = [P_data[i][-1] for i in range(N_reps)]
         datasets.append((R_focus_data, P_focus_data))
-
+    print(R_data)
+    print(R_focus_data)
+    print(datasets[0])
     '''datasets = []
     for path in data_paths:
         rotation = np.load(f'{path}/rotation_data.npy', allow_pickle=True)

@@ -26,7 +26,7 @@ c[:-1] += np.array([2,2])
 print(c)
 #print(np.concatenate([a, b], axis=0))
 test_prints = False
-env = Environment(10, 3)
+env = Environment(10, 3,5)
 predator = Predator(0,0,-200)
 pop = Population(50, env, predator)
 indices_array = np.arange(10)
@@ -258,23 +258,25 @@ for s in range(strips):
 #np.save(f'{data_path}/rotation_errors', rotation_errors)
 
 s = 0
-r = 1
+r = 0
 i = 0
 
 fig, ax1 = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(7, 7))
 
-ax1.set_xlim3d(0, 38)
-ax1.set_ylim3d(-10*0.9, 20*0.9)
-ax1.set_zlim3d(0, 20*0.9)
-ax1.set_xlabel('')
-ax1.set_ylabel('')
-ax1.set_zlabel('')
-ax1.xaxis.set_major_formatter('')
-ax1.yaxis.set_major_formatter('')
-ax1.zaxis.set_major_formatter('')
+ax1.set_xlim3d(-50, 50)      #ax1.set_xlim3d(0, 38)
+ax1.set_ylim3d(-50, 50)     #ax1.set_ylim3d(-10*0.9, 20*0.9)
+ax1.set_zlim3d(-50, 50)           #ax1.set_zlim3d(0, 20*0.9)
+ax1.set_xlabel('x')
+ax1.set_ylabel('y')
+ax1.set_zlabel('z')
+
+#ax1.xaxis.set_major_formatter('')
+#ax1.yaxis.set_major_formatter('')
+#ax1.zaxis.set_major_formatter('')
 ax1.set_proj_type('persp', focal_length=0.4)
 
-d_path = r"C:\Users\44771\Desktop\Data\2002\2002_1712"
+#d_path = r"C:\Users\44771\Desktop\Data\2002\2002_1712"
+d_path = r"C:\Users\44771\Desktop\Data\2803\2803_2251\Sp4.0_2285702475"        #Sp4.5_1489197482"
 data_file_name1 = os.path.split(d_path)[1]
 data_file_name2 = os.path.split(os.path.split(d_path)[0])[1]
 
@@ -319,10 +321,10 @@ quiver = ax1.quiver(x_positions[0], y_positions[0], z_positions[0],
   #                      np.full(300,0), 
    #                     zdir='z', s=10, c='gray', alpha=0.4)
 xzscatter = ax1.scatter(x_positions[0], 
-                        np.full(300,-12), 
+                        np.full(300, 113),  #-12), 
                         z_positions[0], 
                         zdir='y', s=10, c='gray', alpha=0.4)
-yzscatter = ax1.scatter(np.full(300,0), 
+yzscatter = ax1.scatter(np.full(300,50),   #0), 
                         y_positions[0], 
                         z_positions[0], 
                         zdir='x', s=10, c='gray', alpha=0.4)
@@ -332,10 +334,10 @@ ax1.view_init(elev, 52)
 
 save_animation = False
 if save_animation:
-    new_folder_path = f'C:/Users/44771/Desktop/Plots/{data_file_name2}/{data_file_name1}/Frames'
+    new_folder_path = f'C:/Users/44771/Desktop/Plots/{data_file_name2}/{data_file_name1}/FramesP'
     os.makedirs(new_folder_path, exist_ok=True)
 
-for t in range(200):
+for t in range(500):
    # tree = KDTree(position_data[s][i][r][t])
    # outlier_labels = get_outlier_labels(tree)
     #print(outlier_labels)
@@ -359,10 +361,10 @@ for t in range(200):
        #                     zdir='z', s=10, c='gray', alpha=0.4)
    # xzscatter.set_offsets(np.c_[x_positions[t], np.full(300, -12)])
     xzscatter = ax1.scatter(x_positions[t], 
-                            np.full(300,-12), 
+                            np.full(300, 113),  #-12), 
                             z_positions[t], 
                              s=10, c='gray', alpha=0.4)
-    yzscatter = ax1.scatter(np.full(300,0), 
+    yzscatter = ax1.scatter(np.full(300,50),   #0), 
                             y_positions[t], 
                             z_positions[t], 
                              s=10, c='gray', alpha=0.4)
@@ -372,7 +374,9 @@ for t in range(200):
     if save_animation:
         plt.savefig(f'{new_folder_path}/frame_{t}.png', dpi=300)
   
-   # plt.pause(0.05)
+    plt.pause(0.05)
+
+#print(x_positions[199], y_positions[199], z_positions[199])
 
 angles = np.linspace(0, 90, 10)
 #print(angles)
@@ -405,9 +409,10 @@ print(integers)
 speeds = np.linspace(0,5, 10)
 zipped = list(zip(speeds, integers))
 args, seed = zip(*zipped)
-print(zipped)
+#print(zipped)
 
-print(os.listdir(r'C:\Users\44771\Documents\Level4Project\ProjectFolder\Plots'))
-for i in os.listdir(r'C:\Users\44771\Documents\Level4Project\ProjectFolder\Plots'):
-     print(i)
+#print(os.listdir(r'C:\Users\44771\Documents\Level4Project\ProjectFolder\Plots'))
+#for i in os.listdir(r'C:\Users\44771\Documents\Level4Project\ProjectFolder\Plots'):
+#     print(i)
         
+print([i for i in range(10)])
