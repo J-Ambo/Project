@@ -14,31 +14,33 @@ from numpy.random import PCG64, Generator
 
 Population.population_size = 300
 arena_radius = 2000
-timesteps = 1000
+timesteps = 500
 samples = 2   #number of timesteps to include in the averages(counted from the last timestep)
 dimensions = 3
-depth = 10
-repetitions = 1
+depth = 500
+repetitions = 3
 increments = 1
 strips = 1
 increment_size = 0.4
 
+Parent.rr = 1
 starting_ral = 3 
 starting_rat = 15
-starting_speed = 1
-Parent.rr = 1
+starting_speed = 4
+#Parent.speed = starting_speed
+
 Parent.ral = starting_ral
 Parent.rat = starting_rat
-Population.steering_error = 0.09
+Population.steering_error = 0.08
 Parent.perception_angle = np.deg2rad(270)
-Parent.maximal_turning_angle = np.deg2rad(60) * 0.1  #deg/s * s
+Parent.maximal_turning_angle = np.deg2rad(40) * 0.1  #deg/s * s
 Parent.evasion_angle = np.deg2rad(20)
 #Parent.speed = starting_speed
 Population.selfish = 0
 
 #seeds = np.random.default_rng().integers(10000, 30000, size=3)
 
-processes = 1
+processes = 5
 process_start = time.strftime('%d%m_%H%M')
 start_dm = time.strftime('%d%m')
 save_data = True
@@ -48,6 +50,7 @@ env = Environment(arena_radius, dimensions, depth)
 data_recorder = DataRecorder(Population.population_size, dimensions, timesteps, repetitions, increments, strips)
 def run_simulation(args):
     Parent.speed, seed = args
+    #Parent.maximal_turning_angle, seed = args
     np.random.seed(seed)
     for s in range(strips):
         for i in range(increments):
@@ -62,7 +65,7 @@ def run_simulation(args):
                 for t in range(timesteps):
                     tree = pop.get_tree()
                     pop.update_positions(tree, env, predator)
-                    pop.calculate_order_parameters()
+                    pop.calculate_order_parameters(tree)
                     
                     if predator_on:
                         predator.update_predator(tree, pop)
@@ -119,7 +122,9 @@ def run_simulation(args):
 
 rng = Generator(PCG64())
 integers = rng.integers(2**10, 2**32 -1, size=processes)
-speeds = np.linspace(4, 5, processes)
+speeds = np.linspace(1, 4, processes)
+#angles = np.deg2rad(np.linspace(1, 9, processes))
+
 s = time.perf_counter()
 if __name__ == '__main__':
     with concurrent.futures.ProcessPoolExecutor() as executor:
