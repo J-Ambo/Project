@@ -258,30 +258,35 @@ for s in range(strips):
 #np.save(f'{data_path}/rotation_errors', rotation_errors)
 
 s = 0
-r = 0
+r = 1
 i = 0
 
-fig, ax1 = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(7, 7))
+fig, ax1 = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(5, 5))
 
-ax1.set_xlim3d(-50, 50)      #ax1.set_xlim3d(0, 38)
-ax1.set_ylim3d(-50, 50)     #ax1.set_ylim3d(-10*0.9, 20*0.9)
-ax1.set_zlim3d(-50, 50)           #ax1.set_zlim3d(0, 20*0.9)
-ax1.set_xlabel('x')
-ax1.set_ylabel('y')
-ax1.set_zlabel('z')
+ax1.set_xlim3d(-20, 20)      #ax1.set_xlim3d(0, 38)
+ax1.set_ylim3d(-20, 20)     #ax1.set_ylim3d(-10*0.9, 20*0.9)
+ax1.set_zlim3d(-30, 30)           #ax1.set_zlim3d(0, 20*0.9)
+ax1.set_xlabel('')
+ax1.set_ylabel('')
+ax1.set_zlabel('')
 
-#ax1.xaxis.set_major_formatter('')
-#ax1.yaxis.set_major_formatter('')
-#ax1.zaxis.set_major_formatter('')
+ax1.xaxis.set_major_formatter('')
+ax1.yaxis.set_major_formatter('')
+ax1.zaxis.set_major_formatter('')
 ax1.set_proj_type('persp', focal_length=0.4)
 
 #d_path = r"C:\Users\44771\Desktop\Data\2002\2002_1712"
-d_path = r"C:\Users\44771\Desktop\Data\2803\2803_2251\Sp4.0_2285702475"        #Sp4.5_1489197482"
+d_path = r"C:\Users\44771\Desktop\Data\0604\0604_1654\Sp2.0_2620270671"        #Sp4.5_1489197482"
 data_file_name1 = os.path.split(d_path)[1]
 data_file_name2 = os.path.split(os.path.split(d_path)[0])[1]
 
+population = 30
+
 position_data = np.load(f'{d_path}/position_data.npy', allow_pickle=True)
 direction_data = np.load(f'{d_path}/direction_data.npy', allow_pickle=True)
+predator_positions = np.load(f'{d_path}/predator_positions.npy', allow_pickle=True)
+predator_directions = np.load(f'{d_path}/predator_directions.npy', allow_pickle=True)
+
 ##print(position_data[s][i][r])
 x_positions = position_data[s][i][r][:,:,0]
 y_positions = position_data[s][i][r][:,:,1]
@@ -290,6 +295,15 @@ z_positions = position_data[s][i][r][:,:,2]
 x_directions = direction_data[s][i][r][:,:,0]
 y_directions = direction_data[s][i][r][:,:,1]
 z_directions = direction_data[s][i][r][:,:,2]
+
+px_positions = predator_positions[s][i][r][:,:,0]
+py_positions = predator_positions[s][i][r][:,:,1]
+pz_positions = predator_positions[s][i][r][:,:,2]
+
+px_directions = predator_directions[s][i][r][:,:,0]
+py_directions = predator_directions[s][i][r][:,:,1]
+pz_directions = predator_directions[s][i][r][:,:,2]
+
 
 def get_densities(tree):
         distances = tree.query(position_data[s][i][r][t], k=10)[0]
@@ -316,36 +330,39 @@ quiver = ax1.quiver(x_positions[0], y_positions[0], z_positions[0],
                        arrow_length_ratio=0.2,
                        linewidth=1,
                        pivot='middle')
+
+predator = ax1.quiver(px_positions[0], py_positions[0], pz_positions[0],
+                       px_directions[0], py_directions[0], pz_directions[0],
+                       length=4,
+                       arrow_length_ratio=0.4, alpha=0,
+                       linewidth=2,
+                       pivot='middle')
+
 #xyscatter = ax1.scatter(x_positions[0],
  #                       y_positions[0], 
   #                      np.full(300,0), 
    #                     zdir='z', s=10, c='gray', alpha=0.4)
 xzscatter = ax1.scatter(x_positions[0], 
-                        np.full(300, 113),  #-12), 
+                        np.full(population, -8),  #-12), 
                         z_positions[0], 
                         zdir='y', s=10, c='gray', alpha=0.4)
-yzscatter = ax1.scatter(np.full(300,50),   #0), 
+yzscatter = ax1.scatter(np.full(population,-8),   #0), 
                         y_positions[0], 
                         z_positions[0], 
                         zdir='x', s=10, c='gray', alpha=0.4)
-elev = 20
+elev = 22
 azim = np.linspace(30,210, 200)
 ax1.view_init(elev, 52)
 
 save_animation = False
 if save_animation:
-    new_folder_path = f'C:/Users/44771/Desktop/Plots/{data_file_name2}/{data_file_name1}/FramesP'
+    new_folder_path = f'C:/Users/44771/Desktop/Plots/{data_file_name2}/{data_file_name1}/FramesR'
     os.makedirs(new_folder_path, exist_ok=True)
 
-for t in range(500):
-   # tree = KDTree(position_data[s][i][r][t])
-   # outlier_labels = get_outlier_labels(tree)
-    #print(outlier_labels)
-    ##outlier_positions = position_data[s][i][r][t][outlier_labels]
-    #print(outlier_positions)
+for t in range(1000):
     ax1.set_title(f'Timestep = {t+1}', size=22, name='Times New Roman')
     quiver.remove()
-    #xyscatter.remove()
+    predator.remove()
     yzscatter.remove()
     xzscatter.remove()
     quiver = ax1.quiver(x_positions[t], y_positions[t], z_positions[t],
@@ -355,24 +372,39 @@ for t in range(500):
                         pivot='middle',
                         colors=['b' ],  #if outlier else 'b' for outlier in outlier_labels],
                         linewidths=1)
+    
+    predator = ax1.quiver(px_positions[t], py_positions[t], pz_positions[t],
+                        px_directions[t], py_directions[t], pz_directions[t],
+                        length=4,
+                        arrow_length_ratio=0.4,
+                        pivot='middle',
+                        colors=['r'], 
+                        linewidths=1.5)
+    
     #xyscatter = ax1.scatter(x_positions[t], 
      #                       y_positions[t], 
       #                      np.full(300,0), 
        #                     zdir='z', s=10, c='gray', alpha=0.4)
    # xzscatter.set_offsets(np.c_[x_positions[t], np.full(300, -12)])
     xzscatter = ax1.scatter(x_positions[t], 
-                            np.full(300, 113),  #-12), 
+                            np.full(population, -8),  #-12), 
                             z_positions[t], 
                              s=10, c='gray', alpha=0.4)
-    yzscatter = ax1.scatter(np.full(300,50),   #0), 
+    yzscatter = ax1.scatter(np.full(population,-8),   #0), 
                             y_positions[t], 
                             z_positions[t], 
                              s=10, c='gray', alpha=0.4)
-    #ax1.set_title(f'Time: {t} Strip: {s+1} Increment: {i+1} Repetition: {r+1}')# Outliers: {len(outlier_positions)}')
    ## ax1.view_init(elev, azim[t])
+    if (t > 260) & (t < 360):
+    #    ax1.scatter(px_positions[t], py_positions[t], pz_positions[t], s=0.5, color='red', alpha=0.8, marker='o')
+        if save_animation:
+            plt.savefig(f'{new_folder_path}/frame_{t}.png', dpi=150)
 
-    if save_animation:
-        plt.savefig(f'{new_folder_path}/frame_{t}.png', dpi=300)
+  #  if (t > 280) & (t < 325):
+    #    ax1.scatter(x_positions[t], y_positions[t], z_positions[t], s=0.5, color='blue', alpha=0.7, marker='o')
+    
+
+        
   
     plt.pause(0.05)
 

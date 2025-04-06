@@ -12,51 +12,49 @@ import concurrent.futures
 from numpy.random import PCG64, Generator
 '''This script contains the main simulation loop, saving data for later plotting and analysis.'''
 
-Population.population_size = 300
+Population.population_size = 30
 arena_radius = 2000
 timesteps = 500
 samples = 2   #number of timesteps to include in the averages(counted from the last timestep)
 dimensions = 3
-depth = 500
+depth = 300
 repetitions = 3
 increments = 1
 strips = 1
 increment_size = 0.4
 
-Parent.rr = 1
-starting_ral = 3 
+Parent.rr = 0.5
+starting_ral = 4 
 starting_rat = 15
-starting_speed = 4
+starting_speed = 3
 #Parent.speed = starting_speed
 
 Parent.ral = starting_ral
 Parent.rat = starting_rat
-Population.steering_error = 0.08
+Population.steering_error = 0.1
 Parent.perception_angle = np.deg2rad(270)
-Parent.maximal_turning_angle = np.deg2rad(40) * 0.1  #deg/s * s
-Parent.evasion_angle = np.deg2rad(20)
+Parent.maximal_turning_angle = np.deg2rad(60) * 0.1  #deg/s * s
+Parent.evasion_angle = np.deg2rad(30) * 0.1
 #Parent.speed = starting_speed
-Population.selfish = 0
+Population.selfish = 0.5
 
-#seeds = np.random.default_rng().integers(10000, 30000, size=3)
-
-processes = 5
+processes = 1
 process_start = time.strftime('%d%m_%H%M')
 start_dm = time.strftime('%d%m')
 save_data = True
-predator_on = False
+predator_on = True
 
 env = Environment(arena_radius, dimensions, depth)
 data_recorder = DataRecorder(Population.population_size, dimensions, timesteps, repetitions, increments, strips)
 def run_simulation(args):
     Parent.speed, seed = args
-    #Parent.maximal_turning_angle, seed = args
+    #Parent.evasion_angle, seed = args
     np.random.seed(seed)
     for s in range(strips):
         for i in range(increments):
             for r in range(repetitions):
                 #print(r)
-                predator = Predator(0, 0, -2005)
+                predator = Predator(0, 0, 100)
                 if not predator_on:
                     predator.speed = 0
 
@@ -84,13 +82,15 @@ def run_simulation(args):
                     #np.save(f'{new_folder_path}/rotation_averages', data_recorder.rotation_averages)
                    # np.save(f'{new_folder_path}/rotation_errors', data_recorder.rotation_errors)
                    # np.save(f'{new_folder_path}/polarisation_errors', data_recorder.polarisation_errors)
-                   # np.save(f'{new_folder_path}/predator_positions', data_recorder.predator_position_data)
-                    #np.save(f'{new_folder_path}/predator_directions', data_recorder.predator_direction_data)
-                    #np.save(f'{new_folder_path}/predator_prey_distances', data_recorder.predator_prey_distances)
+                    np.save(f'{new_folder_path}/predator_positions', data_recorder.predator_position_data)
+                    np.save(f'{new_folder_path}/predator_directions', data_recorder.predator_direction_data)
+                    np.save(f'{new_folder_path}/mean_distance2prey', data_recorder.mean_distance2prey)
                    # np.save(f'{new_folder_path}/predator_attack_number', data_recorder.predator_attack_number)
-                    np.save(f'{new_folder_path}/density_data', data_recorder.density_data)
+                    #np.save(f'{new_folder_path}/density_data', data_recorder.density_data)
                     #np.save(f'{new_folder_path}/target_density_data', data_recorder.predator_target_densities)
                     #np.save(f'{new_folder_path}/predator_success', data_recorder.predator_success)
+                    np.save(f'{new_folder_path}/predator_prey_angles', data_recorder.predator_prey_angles)
+                    np.save(f'{new_folder_path}/prey_orientation', data_recorder.prey_orientation)
 
                                     
                     with open(f'{new_folder_path}/parameters.txt', 'w') as file:
@@ -122,8 +122,8 @@ def run_simulation(args):
 
 rng = Generator(PCG64())
 integers = rng.integers(2**10, 2**32 -1, size=processes)
-speeds = np.linspace(1, 4, processes)
-#angles = np.deg2rad(np.linspace(1, 9, processes))
+speeds = np.linspace(2, 4, processes)
+#angles = np.deg2rad(np.linspace(0, 5, processes))
 
 s = time.perf_counter()
 if __name__ == '__main__':

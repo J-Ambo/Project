@@ -81,13 +81,38 @@ class Predator(Parent):
         self.previous_neighbours = neighbours_indices
        # self.previous_targets = targets
 
+    def calculate_angles(self, positions, directions):
+        predator_school_vectors = (positions - self.position)
+        norms = np.linalg.norm(predator_school_vectors, axis=1)
+        #print(norms)
+        predator_school_vectors /= norms[:, np.newaxis]
+        dot_products = np.dot(predator_school_vectors, self.direction)
+
+        if np.any(dot_products < 0) and np.any(dot_products >= 0):
+            self.attack = True
+            predator_prey_angles = np.rad2deg(np.arccos(dot_products))
+            print(predator_prey_angles)
+            self.predator_prey_angles = predator_prey_angles  #np.append(self.predator_prey_angles, predator_prey_angles)
+
+            dt_prod = np.einsum('ij, ij->i', -predator_school_vectors, directions)
+            prey_angles = np.rad2deg(np.arccos(dt_prod))
+           # print(np.mean(prey_angles))
+            self.prey_orientation = prey_angles  #np.append(self.prey_orientation, prey_angles)
+           # print(self.predator_prey_angles)
+
+            self.mean_distance2prey = np.mean(norms)
+        #    print(self.mean_distance2prey)
+        
+        else:
+            self.attack = False
+
     def update_predator(self, tree, population):
-        self.fnc(tree, population)
+       # self.fnc(tree, population)
         self.calculate_direction(population)
         if self.fixed_direction is not None:
-            self.position += self.fixed_direction * self.speed
+            self.position += self.fixed_direction * self.speed * 0.1
         else:
-            self.position += self.direction * self.speed
+            self.position += self.direction * self.speed * 0.1
 
         population.population_positions[-1] = self.position
         population.population_directions[-1] = self.direction
