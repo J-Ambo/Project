@@ -82,26 +82,28 @@ class Predator(Parent):
        # self.previous_targets = targets
 
     def calculate_angles(self, positions, directions):
+       # neighbours_indices, distances = self.find_neighbours(tree, population, 7)
         predator_school_vectors = (positions - self.position)
         norms = np.linalg.norm(predator_school_vectors, axis=1)
         #print(norms)
         predator_school_vectors /= norms[:, np.newaxis]
         dot_products = np.dot(predator_school_vectors, self.direction)
 
-        if np.any(dot_products < 0) and np.any(dot_products >= 0):
+        if np.any(dot_products <= 0) and np.any(dot_products >= 0):
             self.attack = True
             predator_prey_angles = np.rad2deg(np.arccos(dot_products))
-            print(predator_prey_angles)
+        ##    print('ppa',predator_prey_angles)
             self.predator_prey_angles = predator_prey_angles  #np.append(self.predator_prey_angles, predator_prey_angles)
 
             dt_prod = np.einsum('ij, ij->i', -predator_school_vectors, directions)
-            prey_angles = np.rad2deg(np.arccos(dt_prod))
+            prey_orientation = np.rad2deg(np.arccos(dt_prod))
+        ##    print('po',prey_orientation)
            # print(np.mean(prey_angles))
-            self.prey_orientation = prey_angles  #np.append(self.prey_orientation, prey_angles)
+            self.prey_orientation = prey_orientation
            # print(self.predator_prey_angles)
 
-            self.mean_distance2prey = np.mean(norms)
-        #    print(self.mean_distance2prey)
+            self.distance2prey = norms #np.mean(norms)
+            #print(norms)
         
         else:
             self.attack = False

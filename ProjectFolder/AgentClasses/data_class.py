@@ -15,7 +15,7 @@ class DataRecorder:
 
         self.predator_prey_angles = np.zeros((repetitions, time, population_size))
         self.prey_orientation = np.zeros((repetitions, time, population_size))
-        self.mean_distance2prey = np.zeros((repetitions, time))
+        self.distance2prey = np.zeros((repetitions, time, population_size))
 
         self.polarisation_data = np.zeros((strips, increments, repetitions, time))  #self.initialize_data(strips, increments, repetitions, time)
         self.rotation_data = np.zeros((strips, increments, repetitions, time))  #self.initialize_data(strips, increments, repetitions, time)
@@ -40,7 +40,7 @@ class DataRecorder:
         if predator.attack:
             self.predator_prey_angles[repetition, time_step, :] = predator.predator_prey_angles
             self.prey_orientation[repetition, time_step, :] = predator.prey_orientation
-            self.mean_distance2prey[repetition, time_step] = predator.mean_distance2prey
+            self.distance2prey[repetition, time_step, :] = predator.distance2prey
 
 
     def calculate_averages(self, strip, increment, samples):

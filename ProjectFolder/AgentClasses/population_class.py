@@ -210,7 +210,7 @@ class Population(Parent):
 
         self.calculate_all_vectors(neighbours, distances, predator)
      #   print(self.population_positions[:-1,-1], self.all_wall_vectors)
-        sum_of_social_vectors = self.all_repulsion_vectors + self.all_alignment_vectors + self.all_attraction_vectors + 0.5*self.all_heading_vectors
+        sum_of_social_vectors = self.all_repulsion_vectors + self.all_alignment_vectors + self.all_attraction_vectors + 1*self.all_heading_vectors
         sum_of_social_vectors /= (np.linalg.norm(sum_of_social_vectors, axis=1)[:, np.newaxis] + 1e-10)
 
         all_escape_coefficients = np.ones(self.population_size) * (self.escape_coefficient * self.predator_mask + ~self.predator_mask)
